@@ -1,0 +1,79 @@
+﻿:root {
+    --bg: #f4f7ff;
+    --card: #ffffff;
+    --text: #1e2a3a;
+    --muted: #4f6278;
+    --line: #d7e1ee;
+    --primary: #0c7c59;
+    --danger: #a01a1a;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    color: var(--text);
+    background: linear-gradient(130deg, #e8efff, #f7fbff 45%, #fefcf7);
+    min-height: 100vh;
+}
+
+.page {
+    max-width: 680px;
+    margin: 40px auto;
+    padding: 24px;
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    background: var(--card);
+    box-shadow: 0 16px 35px rgba(25, 35, 52, 0.08);
+}
+
+h1 {
+    margin-top: 0;
+}
+
+#guess-form {
+    display: grid;
+    gap: 10px;
+    margin: 20px 0;
+}
+
+input,
+button {
+    padding: 10px 12px;
+    border-radius: 8px;
+    border: 1px solid var(--line);
+    font-size: 16px;
+}
+
+button {
+    background: var(--primary);
+    color: #fff;
+    cursor: pointer;
+    border: none;
+}
+
+.result {
+    min-height: 24px;
+    font-weight: 600;
+}
+
+.result.error {
+    color: var(--danger);
+}
+
+.result.success {
+    color: var(--primary);
+}
+
+.debug {
+    margin-top: 16px;
+    padding: 12px;
+    background: #f8fbff;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    color: var(--muted);
+    overflow: auto;
+}
