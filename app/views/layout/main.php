@@ -8,5 +8,6 @@
 </head>
 <body>
     <?= $content ?? '' ?>
+    <script type="module" src="public/assets/js/app.js"></script>
 </body>
 </html>
