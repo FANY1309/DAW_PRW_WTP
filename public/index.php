@@ -8,8 +8,10 @@ require __DIR__ . '/../app/core/Controller.php';
 require __DIR__ . '/../app/core/Model.php';
 require __DIR__ . '/../app/controllers/HomeController.php';
 require __DIR__ . '/../app/models/RetoDiario.php';
+require __DIR__ . '/../app/models/Partida.php';
 require __DIR__ . '/../app/services/GameService.php';
 require __DIR__ . '/../app/controllers/Api/RetoController.php';
+require __DIR__ . '/../app/controllers/Api/PartidaController.php';
 require __DIR__ . '/../app/core/Router.php';
 
 // la clase que registra rutas (GET/POST) y envía cada request al controlador correcto. (MVC)
@@ -17,6 +19,7 @@ use App\Core\Router;
 // La clase controlador del home
 use App\Controllers\HomeController;
 use App\Controllers\Api\RetoController;
+use App\Controllers\Api\PartidaController;
 
 // Creamos el enrutador (decide qué controlador se ejecuta).
 $router = new Router();
@@ -24,6 +27,7 @@ $router = new Router();
 // registramos los controladores correspondientes
 $router->get('/', [HomeController::class, 'index']);
 $router->get('/api/reto/hoy', [RetoController::class, 'hoy']);
+$router->post('/api/partida/intento', [PartidaController::class, 'intento']);
 
 // capturamos el método HTTP actual (GET, POST, etc.).
 $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';

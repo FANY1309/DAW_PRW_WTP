@@ -34,4 +34,24 @@ abstract class Controller
         // Cargamos el layout principal (dentro se usa $content)
         require __DIR__ . '/../views/layout/main.php';
     }
+
+    // Lee el body en json y lo devuelve en array
+    // Si viene vacío o mal formado, devuelve []
+    protected function inputJson(): array
+    {
+        // Leemos el body crudo de la peticion (json)
+        $raw = file_get_contents('php://input');
+        if ($raw === false || $raw === '') {
+            return [];
+        }
+
+        // Convertimos json a array asociativo
+        $decoded = json_decode($raw, true);
+
+        if (is_array($decoded)) {
+            return $decoded;
+        }
+
+        return [];
+    }
 }

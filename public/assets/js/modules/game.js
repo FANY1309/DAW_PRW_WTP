@@ -6,3 +6,12 @@ export async function loadChallenge() {
     return apiFetch('api/reto/hoy');
 }
 
+// Esta función envía el intento del jugador (nombre del Pokémon).
+// Usamos POST porque estamos mandando datos.
+// JSON.stringify convierte el objeto a texto JSON.
+export async function submitAttempt(nombre) {
+    return apiFetch('api/partida/intento', {
+        method: 'POST',
+        body: JSON.stringify({ nombre }),
+    });
+}
