@@ -7,6 +7,10 @@
 -- El reto diario se asocia al “Pokémon-tipo” (tabla puente). (ver justificación del E/R)
 
 SET NAMES utf8mb4;
+-- DESCOMENTAR ESTAS LINEAS EN LOCAL, PRE O DESARROLLO
+-- DROP DATABASE IF EXISTS wtp;
+-- CREATE DATABASE wtp CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+-- USE wtp;
 SET FOREIGN_KEY_CHECKS = 0;
 
 -- 1) USUARIO
