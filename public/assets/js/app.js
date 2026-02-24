@@ -9,6 +9,7 @@ import {
 
 const dateNode = document.getElementById('challenge-date');
 const resultNode = document.getElementById('result');
+const pointsNode = document.getElementById('points');
 const hintNode = document.getElementById('hint');
 const debugNode = document.getElementById('debug');
 const form = document.getElementById('guess-form');
@@ -63,6 +64,7 @@ async function cargarDatosJuego() {
         resultNode.textContent = 'No se pudo cargar la lista de pokemon.';
         resultNode.classList.add('error');
         resultNode.classList.remove('success');
+        ocultarPuntos();
         return;
     }
 
@@ -76,6 +78,7 @@ async function cargarDatosJuego() {
         dateNode.textContent = response.data && response.data.message ? response.data.message : 'No hay reto activo cargado en la BD.';
         debugNode.textContent = JSON.stringify(response.data, null, 2);
         ocultarPistas();
+        ocultarPuntos();
         bloquearEnvio();
         return;
     }
@@ -86,6 +89,7 @@ async function cargarDatosJuego() {
     // Mostramos la respuesta completa en modo debug.
     debugNode.textContent = JSON.stringify(response.data, null, 2);
     ocultarPistas();
+    ocultarPuntos();
 }
 
 // Vincula eventos de login/logout y sincroniza estado de sesión + juego tras cada accion
@@ -161,6 +165,7 @@ form.addEventListener('submit', async function (event) {
         resultNode.classList.add('error');
         resultNode.classList.remove('success');
         ocultarPistas();
+        ocultarPuntos();
         return;
     }
 
@@ -176,6 +181,7 @@ form.addEventListener('submit', async function (event) {
         resultNode.classList.add('error');
         resultNode.classList.remove('success');
         ocultarPistas();
+        ocultarPuntos();
         return;
     }
 
@@ -190,10 +196,12 @@ form.addEventListener('submit', async function (event) {
         pokemonSearch.value = '';
         ocultarSugerencias();
         ocultarPistas();
+        mostrarPuntos(response.data.puntos, response.data.intentosFallidosAntesDelAcierto);
     } else {
         resultNode.classList.add('error');
         resultNode.classList.remove('success');
         mostrarPistas(response.data.pista);
+        ocultarPuntos();
     }
 });
 
@@ -221,6 +229,7 @@ function mostrarEstadoInvitado() {
     resultNode.classList.remove('success');
     debugNode.textContent = '';
     ocultarPistas();
+    ocultarPuntos();
     desbloquearEnvio();
     setAuthStatus('Modo invitado: puedes jugar, pero no se guardan partidas.', false);
 }
@@ -523,6 +532,34 @@ function mostrarPistas(hint) {
 function ocultarPistas() {
     hintNode.hidden = true;
     hintNode.innerHTML = '';
+}
+
+// Toma los puntos obtenidos y los muestra en el panel de puntos, junto con el número de intentos fallidos antes del acierto si está disponible
+function mostrarPuntos(points, failedBeforeSuccess) {
+    if (!pointsNode) {
+        return;
+    }
+
+    const puntos = Number(points);
+    const fallos = Number(failedBeforeSuccess);
+
+    if (!Number.isFinite(puntos)) {
+        ocultarPuntos();
+        return;
+    }
+
+    const fallosText = Number.isFinite(fallos) ? ` (fallos previos: ${fallos})` : '';
+    pointsNode.textContent = `Puntos obtenidos: ${puntos}${fallosText}`;
+    pointsNode.hidden = false;
+}
+
+function ocultarPuntos() {
+    if (!pointsNode) {
+        return;
+    }
+
+    pointsNode.hidden = true;
+    pointsNode.textContent = '';
 }
 
 iniciar();

@@ -47,7 +47,7 @@ class GameService
         return $this->pokemonModel->ListaTodos();
     }
 
-    // Consulta rápida para el frontend: permite bloquear el formulario al entrar al index.
+    // Permite al frontend saber si debe bloquear el formulario
     public function hasSolvedTodayChallenge(): bool
     {
         if (!$this->puedeGuardarIntentos()) {
@@ -62,7 +62,7 @@ class GameService
         return $this->partidaModel->hasCorrectAttempt($this->usuarioId, (int)$reto['id']);
     }
 
-    // esta función ejecuta el intento al darle al botón "Probar"
+    // Ejecuta un intento del jugador.
     public function attempt(string $guess): array
     {
         // extraemos el reto diario
@@ -76,31 +76,49 @@ class GameService
             ];
         }
 
-        // Usamos el id del reto activo para comprobar histórico de partidas del usuario.
         $retoId = (int)$reto['id'];
 
-        // transformamos los string a comparar en minúsculas para saber si el intento es acertado o no
-        $target = strtolower(trim($reto['nombre']));
+        // Usuario autenticado: no permitimos nuevos intentos tras un acierto.
+        if ($this->puedeGuardarIntentos() && $this->partidaModel->hasCorrectAttempt($this->usuarioId, $retoId)) {
+            return [
+                'ok' => false,
+                'alreadySolved' => true,
+                'message' => 'Ya acertaste el reto de hoy. Vuelve manana para un nuevo reto.',
+            ];
+        }
+
+        $target = strtolower(trim((string)$reto['nombre']));
         $current = strtolower(trim($guess));
         $isCorrect = $target === $current;
 
         $partidaId = null;
-        $intentosFallidos = 0;
+        $intentosFallidosPrevios = $this->obtenerIntentosFallidosActuales($retoId);
+        $intentosFallidos = $intentosFallidosPrevios;
+        $puntos = null;
 
         if ($this->puedeGuardarIntentos()) {
             $partidaId = $this->partidaModel->saveAttempt($this->usuarioId, $retoId, $isCorrect ? 'acierto' : 'fallo');
-            $intentosFallidos = $isCorrect ? 0 : $this->partidaModel->countFailedAttempts($this->usuarioId, $retoId);
-        } else {
-            $intentosFallidos = $isCorrect ? 0 : $this->registrarIntentosFallidosInvitado($retoId);
+            if (!$isCorrect) {
+                $intentosFallidos = $intentosFallidosPrevios + 1;
+            }
+        } elseif (!$isCorrect) {
+            $intentosFallidos = $this->registrarIntentosFallidosInvitado($retoId);
+        }
+
+        if ($isCorrect) {
+            $puntos = $this->calcularPuntosPorAcierto($intentosFallidosPrevios);
         }
 
         return [
             'ok' => true,
             'correcto' => $isCorrect,
             'partidaId' => $partidaId,
+            'intentosFallidos' => $intentosFallidos,
             'retoFecha' => $reto['fecha'],
             'pokemon' => $isCorrect ? $reto['nombre'] : null,
             'pista' => $isCorrect ? null : $this->montarPistas($reto, $intentosFallidos),
+            'puntos' => $puntos,
+            'intentosFallidosAntesDelAcierto' => $isCorrect ? $intentosFallidosPrevios : null,
             'message' => $isCorrect ? 'Correcto, adivinaste.' : 'No coincide. Intenta de nuevo.',
             'persisted' => $this->puedeGuardarIntentos(),
         ];
@@ -133,7 +151,31 @@ class GameService
         return (int)$_SESSION['guest_attempts'][$retoId]['failed'];
     }
 
-    // Montamos los datos que pasaremos para montar las pistas 
+    // Obtiene la cantidad actual de fallos para el reto activo.
+    private function obtenerIntentosFallidosActuales(int $retoId): int
+    {
+        if ($this->puedeGuardarIntentos()) {
+            return $this->partidaModel->countFailedAttempts($this->usuarioId, $retoId);
+        }
+
+        if (!isset($_SESSION['guest_attempts'][$retoId]['failed'])) {
+            return 0;
+        }
+
+        return (int)$_SESSION['guest_attempts'][$retoId]['failed'];
+    }
+
+    // Formula base: menos puntos cuantos mas fallos hubo antes del acierto.
+    private function calcularPuntosPorAcierto(int $intentosFallidosPrevios): int
+    {
+        $base = 100;
+        $penalizacionPorFallo = 15;
+        $minimo = 10;
+
+        return max($minimo, $base - ($intentosFallidosPrevios * $penalizacionPorFallo));
+    }
+
+    // Monta las pistas progresivas en base al numero de intentos fallidos.
     private function montarPistas(array $reto, int $intentosFallidos): array
     {
         $tipos = [];
@@ -158,8 +200,8 @@ class GameService
         ];
 
         $pistasVisibles = [];
-        // solo mostramos el numero de pistas según el número de intentos del usuario.
-        // Ejemplo: si intentosFallidos=2, solo mostramos las 2 primeras pistas del arreglo.
+        // solo mostramos el numero de pistas según el número de intentos del usuario
+        // Ejemplo: si intentosFallidos=2, solo mostramos las 2 primeras pistas del arreglo
         $maxPistas = min($intentosFallidos, count($ordenPistas));
         $index = 0;
 
@@ -178,6 +220,3 @@ class GameService
         ];
     }
 }
-
-
-

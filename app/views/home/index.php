@@ -35,6 +35,7 @@
     </form>
 
     <div id="result" class="result"></div>
+    <div id="points" class="points" hidden></div>
     <div id="hint" class="hint" hidden></div>
 
     <pre id="debug" class="debug"></pre>
