@@ -68,6 +68,28 @@ button {
     color: var(--primary);
 }
 
+.hint {
+    margin-top: 12px;
+    padding: 12px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: #f8fbff;
+}
+
+.hint h3 {
+    margin: 0 0 8px;
+    font-size: 16px;
+}
+
+.hint ul {
+    margin: 0;
+    padding-left: 18px;
+}
+
+.hint li {
+    margin: 4px 0;
+}
+
 .debug {
     margin-top: 16px;
     padding: 12px;

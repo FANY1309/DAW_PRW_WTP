@@ -50,7 +50,25 @@ class GameService
             'partidaId' => $partidaId,
             'retoFecha' => $reto['fecha'],
             'pokemon' => $isCorrect ? $reto['nombre'] : null,
+            'pista' => $isCorrect ? null : $this->buildHint($reto),
             'message' => $isCorrect ? 'Correcto, adivinaste.' : 'No coincide. Intenta de nuevo.',
+        ];
+    }
+
+    // Montamos los datos que pasaremos para montar las pistas 
+    private function buildHint(array $reto): array
+    {
+        $tipos = [];
+        if (!empty($reto['tipos'])) {
+            $tipos = array_values(array_filter(array_map('trim', explode(',', (string)$reto['tipos']))));
+        }
+
+        return [
+            'generacion' => $reto['generacion'] !== null ? (int)$reto['generacion'] : null,
+            'tipo' => $tipos,
+            'color' => $reto['color'] !== null ? (string)$reto['color'] : null,
+            'altura' => $reto['altura'] !== null ? (float)$reto['altura'] : null,
+            'peso' => $reto['peso'] !== null ? (float)$reto['peso'] : null,
         ];
     }
 }
