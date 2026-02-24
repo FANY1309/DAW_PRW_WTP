@@ -85,11 +85,23 @@ async function cargarDatosJuego() {
 
     // Si todo salió bien, mostramos la fecha del reto.
     dateNode.textContent = 'Reto activo: ' + response.data.fecha;
-    desbloquearEnvio();
+    // Si ya fue resuelto (usuario o invitado), bloqueamos intentos y mostramos mensaje + puntos.
+    if (response.data.alreadySolved) {
+        bloquearEnvio();
+        resultNode.textContent = response.data.alreadySolvedMessage || 'Ya acertaste el reto de hoy.';
+        resultNode.classList.add('success');
+        resultNode.classList.remove('error');
+        mostrarPuntos(response.data.alreadySolvedPoints, response.data.alreadySolvedFailedAttempts);
+    } else {
+        desbloquearEnvio();
+        resultNode.textContent = '';
+        resultNode.classList.remove('error');
+        resultNode.classList.remove('success');
+        ocultarPuntos();
+    }
     // Mostramos la respuesta completa en modo debug.
     debugNode.textContent = JSON.stringify(response.data, null, 2);
     ocultarPistas();
-    ocultarPuntos();
 }
 
 // Vincula eventos de login/logout y sincroniza estado de sesión + juego tras cada accion
@@ -178,10 +190,18 @@ form.addEventListener('submit', async function (event) {
     // Si hay error, mostramos mensaje de error
     if (!response.ok || !response.data.ok) {
         resultNode.textContent = response.data.message || 'Error en el intento.';
-        resultNode.classList.add('error');
-        resultNode.classList.remove('success');
+        // ya resuelto = lo tratamos como estado exitoso bloqueado
+        if (response.data && response.data.alreadySolved) {
+            resultNode.classList.add('success');
+            resultNode.classList.remove('error');
+            mostrarPuntos(response.data.puntos, response.data.intentosFallidosAntesDelAcierto);
+            bloquearEnvio();
+        } else {
+            resultNode.classList.add('error');
+            resultNode.classList.remove('success');
+            ocultarPuntos();
+        }
         ocultarPistas();
-        ocultarPuntos();
         return;
     }
 

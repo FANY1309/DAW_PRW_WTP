@@ -61,6 +61,10 @@ h1 {
     background: rgba(24, 34, 48, 0.45);
 }
 
+.login-modal[hidden] {
+    display: none;
+}
+
 .login-modal-card {
     width: 100%;
     max-width: 420px;

@@ -2,9 +2,9 @@
 
 namespace App\Services;
 
-use App\Models\RetoDiario;
 use App\Models\Partida;
 use App\Models\Pokemon;
+use App\Models\RetoDiario;
 
 class GameService
 {
@@ -38,6 +38,7 @@ class GameService
     // esta función devuelve el reto diario de hoy o, en su defecto, el último reto diario disponible
     public function getTodayChallenge(): ?array
     {
+        // esta funcion devuelve el reto diario de hoy o, en su defecto, el ultimo reto diario disponible
         return $this->retoModel->findTodayActive() ?? $this->retoModel->findAnyActive();
     }
 
@@ -50,24 +51,30 @@ class GameService
     // Permite al frontend saber si debe bloquear el formulario
     public function hasSolvedTodayChallenge(): bool
     {
-        if (!$this->puedeGuardarIntentos()) {
-            return false;
-        }
-
         $reto = $this->getTodayChallenge();
         if (!$reto) {
             return false;
         }
 
-        return $this->partidaModel->hasCorrectAttempt($this->usuarioId, (int)$reto['id']);
+        return $this->obtenerResumenRetoResuelto((int)$reto['id']) !== null;
     }
 
-    // Ejecuta un intento del jugador.
+    // Entrega el resumen del reto resuelto hoy (puntos e intentos fallidos) o null.
+    public function getResumenIntentoResuelto(): ?array
+    {
+        // Devuelve un resumen del reto resuelto hoy para pintar mensaje/puntos al recargar
+        $reto = $this->getTodayChallenge();
+        if (!$reto) {
+            return null;
+        }
+
+        return $this->obtenerResumenRetoResuelto((int)$reto['id']);
+    }
+
     public function attempt(string $guess): array
     {
         // extraemos el reto diario
         $reto = $this->getTodayChallenge();
-
         // si no existe reto diario, no se hace nada
         if (!$reto) {
             return [
@@ -77,13 +84,15 @@ class GameService
         }
 
         $retoId = (int)$reto['id'];
-
-        // Usuario autenticado: no permitimos nuevos intentos tras un acierto.
-        if ($this->puedeGuardarIntentos() && $this->partidaModel->hasCorrectAttempt($this->usuarioId, $retoId)) {
+        // Si ya fue resuelto (usuario o invitado), bloqueamos nuevos intentos
+        $summary = $this->obtenerResumenRetoResuelto($retoId);
+        if ($summary !== null) {
             return [
                 'ok' => false,
                 'alreadySolved' => true,
                 'message' => 'Ya acertaste el reto de hoy. Vuelve manana para un nuevo reto.',
+                'puntos' => (int)$summary['puntos'],
+                'intentosFallidosAntesDelAcierto' => (int)$summary['intentosFallidosAntesDelAcierto'],
             ];
         }
 
@@ -97,16 +106,28 @@ class GameService
         $puntos = null;
 
         if ($this->puedeGuardarIntentos()) {
-            $partidaId = $this->partidaModel->saveAttempt($this->usuarioId, $retoId, $isCorrect ? 'acierto' : 'fallo');
+            // Si es usuario autenticado guardamos cada intento en la tabla partida
+            $partidaId = $this->partidaModel->saveAttempt(
+                $this->usuarioId,
+                $retoId,
+                $isCorrect ? 'acierto' : 'fallo'
+            );
+
             if (!$isCorrect) {
                 $intentosFallidos = $intentosFallidosPrevios + 1;
             }
         } elseif (!$isCorrect) {
+            // Invitado: los fallos se guardan en sesion para pistas progresivas
             $intentosFallidos = $this->registrarIntentosFallidosInvitado($retoId);
         }
 
         if ($isCorrect) {
+            // El puntaje depende de cuantas veces fallo antes de acertar
             $puntos = $this->calcularPuntosPorAcierto($intentosFallidosPrevios);
+            if (!$this->puedeGuardarIntentos()) {
+                // Invitado: guardamos en sesion que ya resolvio y su puntaje del dia
+                $this->guardarResolucionInvitado($retoId, $puntos, $intentosFallidosPrevios);
+            }
         }
 
         return [
@@ -124,9 +145,9 @@ class GameService
         ];
     }
 
-    // Verifica si el usuario actual tiene permisos para guardar intentos en la base de datos
     private function puedeGuardarIntentos(): bool
     {
+        // Verifica si el usuario actual tiene permisos para guardar intentos en la base de datos
         if (!$this->usuarioId || !$this->userRole) {
             return false;
         }
@@ -134,26 +155,43 @@ class GameService
         return in_array($this->userRole, ['admin', 'usuario'], true);
     }
 
-    // Para usuarios no autenticados, registramos los intentos fallidos en la sesión para poder mostrar pistas progresivas
     private function registrarIntentosFallidosInvitado(int $retoId): int
     {
-        if (!isset($_SESSION['guest_attempts']) || !is_array($_SESSION['guest_attempts'])) {
-            $_SESSION['guest_attempts'] = [];
-        }
-
-        if (!isset($_SESSION['guest_attempts'][$retoId])) {
-            $_SESSION['guest_attempts'][$retoId] = [
-                'failed' => 0,
-            ];
-        }
-
+        // Para usuarios no autenticados, registramos los intentos fallidos en la sesion para poder mostrar pistas progresivas
+        $this->asegurarSesionInvitado($retoId);
         $_SESSION['guest_attempts'][$retoId]['failed']++;
         return (int)$_SESSION['guest_attempts'][$retoId]['failed'];
     }
 
-    // Obtiene la cantidad actual de fallos para el reto activo.
+    private function guardarResolucionInvitado(int $retoId, int $puntos, int $intentosFallidosPrevios): void
+    {
+        // Guarda estado final del invitado para bloquear nuevos intentos y mostrar puntos al recargar
+        $this->asegurarSesionInvitado($retoId);
+        $_SESSION['guest_attempts'][$retoId]['solved'] = true;
+        $_SESSION['guest_attempts'][$retoId]['points'] = $puntos;
+        $_SESSION['guest_attempts'][$retoId]['failed_before_success'] = $intentosFallidosPrevios;
+    }
+
+    private function asegurarSesionInvitado(int $retoId): void
+    {
+        // Estructura base en sesion por reto para invitados
+        if (!isset($_SESSION['guest_attempts']) || !is_array($_SESSION['guest_attempts'])) {
+            $_SESSION['guest_attempts'] = [];
+        }
+
+        if (!isset($_SESSION['guest_attempts'][$retoId]) || !is_array($_SESSION['guest_attempts'][$retoId])) {
+            $_SESSION['guest_attempts'][$retoId] = [
+                'failed' => 0,
+                'solved' => false,
+                'points' => null,
+                'failed_before_success' => 0,
+            ];
+        }
+    }
+
     private function obtenerIntentosFallidosActuales(int $retoId): int
     {
+        // Obtiene la cantidad actual de fallos para el reto activo
         if ($this->puedeGuardarIntentos()) {
             return $this->partidaModel->countFailedAttempts($this->usuarioId, $retoId);
         }
@@ -165,9 +203,44 @@ class GameService
         return (int)$_SESSION['guest_attempts'][$retoId]['failed'];
     }
 
-    // Formula base: menos puntos cuantos mas fallos hubo antes del acierto.
+    private function obtenerResumenRetoResuelto(int $retoId): ?array
+    {
+        // Devuelve resumen cuando el reto ya fue resuelto por usuario o invitado
+        if ($this->puedeGuardarIntentos()) {
+            if (!$this->partidaModel->hasCorrectAttempt($this->usuarioId, $retoId)) {
+                return null;
+            }
+
+            $fallidos = $this->partidaModel->countFailedAttempts($this->usuarioId, $retoId);
+            return [
+                'puntos' => $this->calcularPuntosPorAcierto($fallidos),
+                'intentosFallidosAntesDelAcierto' => $fallidos,
+            ];
+        }
+
+        if (
+            !isset($_SESSION['guest_attempts'][$retoId]) ||
+            !is_array($_SESSION['guest_attempts'][$retoId]) ||
+            empty($_SESSION['guest_attempts'][$retoId]['solved'])
+        ) {
+            return null;
+        }
+
+        $fallidos = (int)($_SESSION['guest_attempts'][$retoId]['failed_before_success'] ?? 0);
+        $pointsInSession = $_SESSION['guest_attempts'][$retoId]['points'] ?? null;
+        $puntos = is_numeric($pointsInSession)
+            ? (int)$pointsInSession
+            : $this->calcularPuntosPorAcierto($fallidos);
+
+        return [
+            'puntos' => $puntos,
+            'intentosFallidosAntesDelAcierto' => $fallidos,
+        ];
+    }
+
     private function calcularPuntosPorAcierto(int $intentosFallidosPrevios): int
     {
+        // Formula base: menos puntos cuantos mas fallos hubo antes del acierto
         $base = 100;
         $penalizacionPorFallo = 15;
         $minimo = 10;
@@ -175,9 +248,9 @@ class GameService
         return max($minimo, $base - ($intentosFallidosPrevios * $penalizacionPorFallo));
     }
 
-    // Monta las pistas progresivas en base al numero de intentos fallidos.
     private function montarPistas(array $reto, int $intentosFallidos): array
     {
+        // Monta las pistas progresivas en base al numero de intentos fallidos
         $tipos = [];
         if (!empty($reto['tipos'])) {
             $tipos = array_values(array_filter(array_map('trim', explode(',', (string)$reto['tipos']))));
@@ -185,10 +258,10 @@ class GameService
 
         // Orden fijo de pistas progresivas:
         // 1 - generacion
-        // 2 - tipo, 
-        // 3 - color, 
-        // 4 - altura, 
-        // 5 - peso, 
+        // 2 - tipo,
+        // 3 - color,
+        // 4 - altura,
+        // 5 - peso,
         // 6 - silueta
         $ordenPistas = [
             'generacion' => $reto['generacion'] !== null ? (int)$reto['generacion'] : null,
