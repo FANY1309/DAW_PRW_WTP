@@ -18,6 +18,7 @@ require __DIR__ . '/../app/controllers/Api/RetoController.php';
 require __DIR__ . '/../app/controllers/Api/PartidaController.php';
 require __DIR__ . '/../app/controllers/Api/AuthController.php';
 require __DIR__ . '/../app/controllers/Api/AdminPokemonController.php';
+require __DIR__ . '/../app/controllers/Api/AdminRetoController.php';
 require __DIR__ . '/../app/core/Router.php';
 
 // la clase que registra rutas (GET/POST) y envía cada request al controlador correcto. (MVC)
@@ -28,6 +29,7 @@ use App\Controllers\Api\RetoController;
 use App\Controllers\Api\PartidaController;
 use App\Controllers\Api\AuthController;
 use App\Controllers\Api\AdminPokemonController;
+use App\Controllers\Api\AdminRetoController;
 
 // Creamos el enrutador (decide qué controlador se ejecuta).
 $router = new Router();
@@ -43,6 +45,7 @@ $router->post('/api/auth/register', [AuthController::class, 'register']);
 $router->post('/api/auth/login', [AuthController::class, 'login']);
 $router->post('/api/auth/logout', [AuthController::class, 'logout']);
 $router->post('/api/admin/pokemon/sync-generation', [AdminPokemonController::class, 'syncGeneration']);
+$router->post('/api/admin/reto-diario', [AdminRetoController::class, 'create']);
 
 // capturamos el método HTTP actual (GET, POST, etc.).
 $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';

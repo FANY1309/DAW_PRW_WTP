@@ -61,3 +61,11 @@ export async function syncPokemonGeneration(generacion) {
         body: JSON.stringify({ generacion }),
     });
 }
+
+// Crea un reto diario manualmente via endpoint admin
+export async function createDailyChallenge(fecha, pokemonId) {
+    return apiFetch('api/admin/reto-diario', {
+        method: 'POST',
+        body: JSON.stringify({ fecha, pokemonId }),
+    });
+}

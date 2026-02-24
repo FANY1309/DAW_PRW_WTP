@@ -60,6 +60,20 @@
                 <button id="admin-sync-button" type="submit">Actualizar lista desde PokeAPI</button>
             </form>
             <p id="admin-sync-status" class="admin-sync-status"></p>
+
+            <h3>Crear reto diario</h3>
+            <form id="admin-challenge-form" class="admin-sync-form" autocomplete="off">
+                <label for="admin-challenge-date-input">Fecha del reto</label>
+                <input id="admin-challenge-date-input" type="date">
+
+                <label for="admin-challenge-pokemon-input">Pokemon</label>
+                <select id="admin-challenge-pokemon-input">
+                    <option value="">Selecciona un pokémon</option>
+                </select>
+
+                <button id="admin-challenge-button" type="submit">Crear reto diario</button>
+            </form>
+            <p id="admin-challenge-status" class="admin-sync-status"></p>
         </section>
     </section>
 

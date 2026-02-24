@@ -36,7 +36,8 @@ body {
     background: rgba(255, 255, 255, 0.92);
     border: 2px solid var(--pokemon-black);
     box-shadow: 0 20px 45px rgba(0, 0, 0, 0.35);
-    backdrop-filter: blur(2px);
+    backdrop-filter: blur(2px);    
+    max-width: 550px;
 }
 
 h1 {
@@ -107,6 +108,10 @@ h1 {
     color: var(--pokemon-red-deep);
 }
 
+.admin-sync-panel h3 + .admin-sync-form + .admin-sync-status + h3 {
+    margin-top: 14px;
+}
+
 .admin-sync-form {
     display: grid;
     gap: 8px;
@@ -141,6 +146,7 @@ label {
 }
 
 input,
+select,
 button {
     border-radius: 10px;
     border: 1px solid var(--line);
@@ -148,12 +154,14 @@ button {
     padding: 11px 12px;
 }
 
-input {
+input,
+select {
     background: #fff;
     color: var(--pokemon-ink);
 }
 
-input:focus {
+input:focus,
+select:focus {
     outline: 2px solid rgba(214, 40, 40, 0.25);
     border-color: var(--pokemon-red);
 }
@@ -171,7 +179,8 @@ button:hover {
 }
 
 button:disabled,
-input:disabled {
+input:disabled,
+select:disabled {
     opacity: 0.58;
     cursor: not-allowed;
 }

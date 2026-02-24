@@ -7,7 +7,8 @@ import {
     registerUser,
     loginUser,
     logoutUser,
-    syncPokemonGeneration
+    syncPokemonGeneration,
+    createDailyChallenge
 } from './modules/game.js';
 
 const dateNode = document.getElementById('challenge-date');
@@ -45,6 +46,10 @@ const adminSyncPanel = document.getElementById('admin-sync-panel');
 const adminSyncForm = document.getElementById('admin-sync-form');
 const adminGenerationInput = document.getElementById('admin-generation-input');
 const adminSyncStatusNode = document.getElementById('admin-sync-status');
+const adminChallengeForm = document.getElementById('admin-challenge-form');
+const adminChallengeDateInput = document.getElementById('admin-challenge-date-input');
+const adminChallengePokemonInput = document.getElementById('admin-challenge-pokemon-input');
+const adminChallengeStatusNode = document.getElementById('admin-challenge-status');
 
 let allPokemons = [];
 let userSession = null;
@@ -107,6 +112,7 @@ async function cargarDatosJuego() {
     }
 
     allPokemons = sanitizarListaPokemon(pokemonListResponse.data.items);
+    renderizarOpcionesAdminPokemon();
 
     // Pedimos al backend el reto del día
     const response = await loadChallenge();
@@ -284,59 +290,98 @@ function vincularEventosRanking() {
 
 // Vincula eventos para el panel de administración de sincronización de pokemons, solo para admins, y para cargar los datos al sincronizar
 function vincularEventosAdmin() {
-    if (!adminSyncForm) {
-        return;
-    }
-
+    if (adminSyncForm) {
     // Al enviar el formulario, se valida la generación, se bloquea el panel para evitar múltiples envíos, 
     // se llama al backend para sincronizar, y luego se muestra el resultado y se recargan los datos del juego
-    adminSyncForm.addEventListener('submit', async function (event) {
-        event.preventDefault();
+        adminSyncForm.addEventListener('submit', async function (event) {
+            event.preventDefault();
 
-        const generation = Number(adminGenerationInput ? adminGenerationInput.value : NaN);
-        if (!Number.isInteger(generation) || generation < 1 || generation > 9) {
-            setAdminSyncStatus('Debes indicar una generacion valida entre 1 y 9.', true);
-            return;
-        }
+            const generation = Number(adminGenerationInput ? adminGenerationInput.value : NaN);
+            if (!Number.isInteger(generation) || generation < 1 || generation > 9) {
+                setAdminSyncStatus('Debes indicar una generacion valida entre 1 y 9.', true);
+                return;
+            }
 
-        setAdminSyncStatus('Sincronizando generacion ' + generation + '...', false);
-        bloquearAdminSync(true);
+            setAdminSyncStatus('Sincronizando generacion ' + generation + '...', false);
+            bloquearAdminSync(true);
 
-        const response = await syncPokemonGeneration(generation);
-        setDebug(response.data);
+            const response = await syncPokemonGeneration(generation);
+            setDebug(response.data);
 
-        if (!response.ok || !response.data.ok) {
-            const message = response.data && response.data.message
-                ? response.data.message
-                : 'No se pudo sincronizar la generacion.';
-            setAdminSyncStatus(message, true);
+            if (!response.ok || !response.data.ok) {
+                const message = response.data && response.data.message
+                    ? response.data.message
+                    : 'No se pudo sincronizar la generacion.';
+                setAdminSyncStatus(message, true);
+                bloquearAdminSync(false);
+                return;
+            }
+
+            const data = response.data.data || {};
+            const errores = Array.isArray(data.errores) ? data.errores.length : 0;
+            const resumenParts = [
+                'Generacion ' + generation + ' sincronizada.',
+                'Procesados: ' + (Number(data.totalProcesados) || 0),
+                'Creados: ' + (Number(data.creados) || 0),
+                'Actualizados: ' + (Number(data.actualizados) || 0),
+                'Errores: ' + errores,
+            ];
+
+            if (errores > 0) {
+                const primerError = data.errores[0] || {};
+                const pokemonConError = primerError.pokemon ? String(primerError.pokemon) : 'desconocido';
+                const detalleError = primerError.error ? String(primerError.error) : 'sin detalle';
+                resumenParts.push('Primer error (' + pokemonConError + '): ' + detalleError);
+            }
+
+            const resumen = resumenParts.join(' ');
+
+            setAdminSyncStatus(resumen, false);
             bloquearAdminSync(false);
-            return;
-        }
+            await cargarDatosJuego();
+        });
+    }
 
-        const data = response.data.data || {};
-        const errores = Array.isArray(data.errores) ? data.errores.length : 0;
-        const resumenParts = [
-            'Generacion ' + generation + ' sincronizada.',
-            'Procesados: ' + (Number(data.totalProcesados) || 0),
-            'Creados: ' + (Number(data.creados) || 0),
-            'Actualizados: ' + (Number(data.actualizados) || 0),
-            'Errores: ' + errores,
-        ];
+    // Al enviar el formulario, se valida la fecha y el pokemon seleccionado, se bloquea el panel para evitar múltiples envíos
+    if (adminChallengeForm) {
+        adminChallengeForm.addEventListener('submit', async function (event) {
+            event.preventDefault();
 
-        if (errores > 0) {
-            const primerError = data.errores[0] || {};
-            const pokemonConError = primerError.pokemon ? String(primerError.pokemon) : 'desconocido';
-            const detalleError = primerError.error ? String(primerError.error) : 'sin detalle';
-            resumenParts.push('Primer error (' + pokemonConError + '): ' + detalleError);
-        }
+            const fecha = adminChallengeDateInput ? String(adminChallengeDateInput.value || '').trim() : '';
+            const pokemonId = Number(adminChallengePokemonInput ? adminChallengePokemonInput.value : NaN);
 
-        const resumen = resumenParts.join(' ');
+            if (!/^\d{4}-\d{2}-\d{2}$/.test(fecha)) {
+                setAdminChallengeStatus('Debes indicar una fecha valida en formato YYYY-MM-DD.', true);
+                return;
+            }
 
-        setAdminSyncStatus(resumen, false);
-        bloquearAdminSync(false);
-        await cargarDatosJuego();
-    });
+            if (!Number.isInteger(pokemonId) || pokemonId <= 0) {
+                setAdminChallengeStatus('Debes seleccionar un pokemon valido.', true);
+                return;
+            }
+
+            setAdminChallengeStatus('Creando reto diario...', false);
+            bloquearAdminChallenge(true);
+
+            const response = await createDailyChallenge(fecha, pokemonId);
+            setDebug(response.data);
+
+            if (!response.ok || !response.data.ok) {
+                const message = response.data && response.data.message
+                    ? response.data.message
+                    : 'No se pudo crear el reto diario.';
+                setAdminChallengeStatus(message, true);
+                bloquearAdminChallenge(false);
+                return;
+            }
+
+            const data = response.data.data || {};
+            const pokemonNombre = data.pokemonNombre ? String(data.pokemonNombre) : 'pokemon';
+            setAdminChallengeStatus('Reto creado para ' + fecha + ' con ' + pokemonNombre + '.', false);
+            bloquearAdminChallenge(false);
+            await cargarDatosJuego();
+        });
+    }
 }
 
 form.addEventListener('submit', async function (event) {
@@ -448,10 +493,12 @@ function mostrarEstadoInvitado() {
     resultNode.classList.remove('success');
     clearDebug();
     setAdminSyncStatus('', false);
+    setAdminChallengeStatus('', false);
     ocultarPistas();
     ocultarPuntos();
     desbloquearEnvio();
     bloquearAdminSync(false);
+    bloquearAdminChallenge(false);
     setAuthStatus('Modo invitado: puedes jugar, pero no se guardan partidas.', false);
 }
 
@@ -495,8 +542,10 @@ function mostrarEstadoUsuarioAuth() {
     setAuthStatus('Sesión activa: ' + (userSession.nombre || userSession.usuario) + '. Tus partidas se guardan.', false);
     if (!isAdmin) {
         setAdminSyncStatus('', false);
+        setAdminChallengeStatus('', false);
     }
     bloquearAdminSync(false);
+    bloquearAdminChallenge(false);
 }
 
 // Muestra un mensaje de estado de autenticación
@@ -519,6 +568,15 @@ function setAdminSyncStatus(message, isError) {
     adminSyncStatusNode.classList.toggle('error', Boolean(isError));
 }
 
+function setAdminChallengeStatus(message, isError) {
+    if (!adminChallengeStatusNode) {
+        return;
+    }
+
+    adminChallengeStatusNode.textContent = message;
+    adminChallengeStatusNode.classList.toggle('error', Boolean(isError));
+}
+
 // Bloquea o desbloquea la interacción con el panel de administración de sincronización de pokemons, 
 // para evitar múltiples envíos simultáneos o acciones no deseadas mientras se procesa una sincronización
 // Solo afecta a admins ya que el panel está oculto para invitados y usuarios normales
@@ -532,6 +590,24 @@ function bloquearAdminSync(locked) {
     }
 
     const submit = adminSyncForm.querySelector('button[type="submit"]');
+    if (submit) {
+        submit.disabled = locked;
+    }
+}
+
+function bloquearAdminChallenge(locked) {
+    if (adminChallengeDateInput) {
+        adminChallengeDateInput.disabled = locked;
+    }
+    if (adminChallengePokemonInput) {
+        adminChallengePokemonInput.disabled = locked;
+    }
+
+    if (!adminChallengeForm) {
+        return;
+    }
+
+    const submit = adminChallengeForm.querySelector('button[type="submit"]');
     if (submit) {
         submit.disabled = locked;
     }
@@ -764,14 +840,34 @@ function sanitizarListaPokemon(rawItems) {
 
     for (let i = 0; i < rawItems.length; i++) {
         const raw = rawItems[i];
+        const id = Number(raw && raw.id !== undefined ? raw.id : NaN);
         const nombre = raw && raw.nombre !== undefined && raw.nombre !== null ? String(raw.nombre).trim() : '';
 
-        if (nombre !== '') {
-            output.push({ nombre });
+        if (Number.isInteger(id) && id > 0 && nombre !== '') {
+            output.push({ id, nombre });
         }
     }
 
     return output;
+}
+
+function renderizarOpcionesAdminPokemon() {
+    if (!adminChallengePokemonInput) {
+        return;
+    }
+
+    let html = '<option value=\"\">Selecciona un pokemon</option>';
+
+    for (let i = 0; i < allPokemons.length; i++) {
+        const pokemon = allPokemons[i];
+        html += `<option value=\"${pokemon.id}\">${escaparTextoHtml(pokemon.nombre)}</option>`;
+    }
+
+    adminChallengePokemonInput.innerHTML = html;
+
+    if (adminChallengeDateInput && adminChallengeDateInput.value === '') {
+        adminChallengeDateInput.value = new Date().toISOString().slice(0, 10);
+    }
 }
 
 // Filtra y ordena la lista de pokemons según el texto ingresado por el usuario, con varias prioridades de coincidencia
@@ -956,3 +1052,4 @@ function ocultarPuntos() {
 }
 
 iniciar();
+

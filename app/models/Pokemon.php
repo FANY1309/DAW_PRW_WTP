@@ -41,6 +41,25 @@ class Pokemon extends Model
         return $fila ?: null;
     }
 
+    // Encontramos un pokemon por id
+    public function encontrarPorId(int $id): ?array
+    {
+        $sql = "
+            SELECT id, nombre
+            FROM pokemon
+            WHERE id = :id
+            LIMIT 1
+        ";
+
+        $stmt = $this->db->pdo()->prepare($sql);
+        $stmt->execute([
+            ':id' => $id,
+        ]);
+
+        $fila = $stmt->fetch();
+        return $fila ?: null;
+    }
+
     // Guardamos o actualizamos un pokémon a partir de datos obtenidos desde la API
     public function guardarDesdeApi(array $pokemonData, int $adminUserId): array
     {

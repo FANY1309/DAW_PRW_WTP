@@ -68,4 +68,55 @@ class RetoDiario extends Model
 
         return $fila ?: null;
     }
+
+    // Verifica si ya existe un reto para la fecha indicada
+    public function existsByDate(string $fecha): bool
+    {
+        $sql = "
+            SELECT 1
+            FROM reto_diario
+            WHERE fecha = :fecha
+            LIMIT 1
+        ";
+
+        $stmt = $this->db->pdo()->prepare($sql);
+        $stmt->execute([
+            ':fecha' => $fecha,
+        ]);
+
+        return (bool)$stmt->fetchColumn();
+    }
+
+    // Crea un nuevo reto diario para una fecha y pokemon especificos
+    public function create(int $adminUserId, string $fecha, int $pokemonId): int
+    {
+        $sql = "
+            INSERT INTO reto_diario (
+                fecha,
+                activo,
+                idPokemon,
+                creadoPorUsuario,
+                fechaCreacion,
+                modificadoPorUsuario,
+                fechaUltimaModificacion
+            ) VALUES (
+                :fecha,
+                1,
+                :pokemonId,
+                :adminUserId,
+                NOW(),
+                :adminUserId,
+                NOW()
+            )
+        ";
+
+        $stmt = $this->db->pdo()->prepare($sql);
+        $stmt->execute([
+            ':fecha' => $fecha,
+            ':pokemonId' => $pokemonId,
+            ':adminUserId' => $adminUserId,
+        ]);
+
+        return (int)$this->db->pdo()->lastInsertId();
+    }
 }
