@@ -89,6 +89,11 @@
     <div id="points" class="points" hidden></div>
     <div id="hint" class="hint" hidden></div>
 
+    <?php
+    $appEnv = strtolower(trim((string)($_ENV['APP_ENV'] ?? $_SERVER['APP_ENV'] ?? getenv('APP_ENV') ?: 'production')));
+    if ($appEnv !== 'production'):
+    ?>
     <pre id="debug" class="debug"></pre>
+    <?php endif; ?>
 </section>
 

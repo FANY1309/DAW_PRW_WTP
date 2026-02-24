@@ -44,6 +44,22 @@ const authStatusNode = document.getElementById('auth-status');
 let allPokemons = [];
 let userSession = null;
 
+function setDebug(data) {
+    if (!debugNode) {
+        return;
+    }
+
+    debugNode.textContent = JSON.stringify(data, null, 2);
+}
+
+function clearDebug() {
+    if (!debugNode) {
+        return;
+    }
+
+    debugNode.textContent = '';
+}
+
 async function iniciar() {
     vincularBusquedaPokemon();
     vincularEventosAuth();
@@ -92,7 +108,7 @@ async function cargarDatosJuego() {
     // Si algo falla, mostramos un mensaje y paramos aquí
     if (!response.ok || !response.data.ok) {
         dateNode.textContent = response.data && response.data.message ? response.data.message : 'No hay reto activo cargado en la BD.';
-        debugNode.textContent = JSON.stringify(response.data, null, 2);
+        setDebug(response.data);
         ocultarPistas();
         ocultarPuntos();
         bloquearEnvio();
@@ -116,7 +132,7 @@ async function cargarDatosJuego() {
         ocultarPuntos();
     }
     // Mostramos la respuesta completa en modo debug.
-    debugNode.textContent = JSON.stringify(response.data, null, 2);
+    setDebug(response.data);
     ocultarPistas();
 }
 
@@ -175,7 +191,7 @@ function vincularEventosAuth() {
             }
 
             const response = await loginUser(identifier, password);
-            debugNode.textContent = JSON.stringify(response.data, null, 2);
+            setDebug(response.data);
 
             if (!response.ok || !response.data.ok) {
                 setAuthStatus(response.data.message || 'No se pudo iniciar sesión.', true);
@@ -209,7 +225,7 @@ function vincularEventosAuth() {
             }
 
             const response = await registerUser(usuario, email, nombre, password);
-            debugNode.textContent = JSON.stringify(response.data, null, 2);
+            setDebug(response.data);
 
             if (!response.ok || !response.data.ok) {
                 setAuthStatus(response.data.message || 'No se pudo completar el registro.', true);
@@ -228,7 +244,7 @@ function vincularEventosAuth() {
     if (logoutButton) {
         logoutButton.addEventListener('click', async function () {
             const response = await logoutUser();
-            debugNode.textContent = JSON.stringify(response.data, null, 2);
+            setDebug(response.data);
             cerrarVentanaLogin();
             cerrarVentanaRegistro();
             cerrarRanking();
@@ -280,7 +296,7 @@ form.addEventListener('submit', async function (event) {
     const response = await submitAttempt(pokemonName);
 
     // Mostramos la respuesta completa en modo debug
-    debugNode.textContent = JSON.stringify(response.data, null, 2);
+    setDebug(response.data);
 
     // Si hay error, mostramos mensaje de error
     if (!response.ok || !response.data.ok) {
@@ -364,7 +380,7 @@ function mostrarEstadoInvitado() {
     resultNode.textContent = '';
     resultNode.classList.remove('error');
     resultNode.classList.remove('success');
-    debugNode.textContent = '';
+    clearDebug();
     ocultarPistas();
     ocultarPuntos();
     desbloquearEnvio();
