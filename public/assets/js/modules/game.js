@@ -31,6 +31,14 @@ export async function getCurrentUser() {
     return apiFetch('api/auth/me');
 }
 
+// Registra un usuario nuevo para invitados
+export async function registerUser(usuario, email, nombre, password) {
+    return apiFetch('api/auth/register', {
+        method: 'POST',
+        body: JSON.stringify({ usuario, email, nombre, password }),
+    });
+}
+
 // Inicia sesion enviando identificador (usuario/email) y contraseña
 export async function loginUser(identifier, password) {
     return apiFetch('api/auth/login', {

@@ -18,6 +18,24 @@
 
                     <button type="submit">Entrar</button>
                 </form>
+
+                <hr class="auth-divider">
+
+                <form id="register-form" class="login-form" autocomplete="off">
+                    <label for="register-usuario">Usuario</label>
+                    <input id="register-usuario" type="text" placeholder="tu usuario">
+
+                    <label for="register-email">Email</label>
+                    <input id="register-email" type="email" placeholder="tu@email.com">
+
+                    <label for="register-nombre">Nombre</label>
+                    <input id="register-nombre" type="text" placeholder="tu nombre">
+
+                    <label for="register-password">Contraseña</label>
+                    <input id="register-password" type="password" placeholder="mínimo 6 carácteres">
+
+                    <button type="submit">Registrarme</button>
+                </form>
             </div>
         </div>
 

@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Core\Model;
+use PDOException;
 
 class User extends Model
 {
@@ -26,7 +27,7 @@ class User extends Model
     }
 
     // Encuentra un usuario por su ID, sin incluir la contraseña
-    public function encontrarPorContrasenia(int $id): ?array
+    public function encontrarPorID(int $id): ?array
     {
         $sql = "
             SELECT id, usuario, email, nombre, estado, rol
@@ -58,5 +59,72 @@ class User extends Model
             ':id' => $id,
             ':sessionId' => $sessionId,
         ]);
+    }
+
+    // Verificamos si ya existe un usuario o email en la base
+    public function existeUsuarioOEmail(string $usuario, string $email): bool
+    {
+        $sql = "
+            SELECT id
+            FROM usuario
+            WHERE usuario = :usuario OR email = :email
+            LIMIT 1
+        ";
+
+        $stmt = $this->db->pdo()->prepare($sql);
+        $stmt->execute([
+            ':usuario' => $usuario,
+            ':email' => $email,
+        ]);
+
+        return (bool)$stmt->fetch();
+    }
+
+    // Crea un usuario activo con rol normal y devuelve sus datos publicos
+    public function crearUsuario(string $usuario, string $email, string $nombre, string $passwordHash): ?array
+    {
+        $sql = "
+            INSERT INTO usuario (
+                usuario,
+                email,
+                nombre,
+                password,
+                fechaRegistro,
+                estado,
+                rol,
+                fechaCreacion,
+                fechaUltimaModificacion
+            ) VALUES (
+                :usuario,
+                :email,
+                :nombre,
+                :password,
+                NOW(),
+                1,
+                'usuario',
+                NOW(),
+                NOW()
+            )
+        ";
+
+        $stmt = $this->db->pdo()->prepare($sql);
+
+        try {
+            $stmt->execute([
+                ':usuario' => $usuario,
+                ':email' => $email,
+                ':nombre' => $nombre,
+                ':password' => $passwordHash,
+            ]);
+        } catch (PDOException $e) {
+            return null;
+        }
+
+        $id = (int)$this->db->pdo()->lastInsertId();
+        if ($id <= 0) {
+            return null;
+        }
+
+        return $this->encontrarPorID($id);
     }
 }

@@ -35,6 +35,7 @@ $router->get('/api/pokemon/lista', [RetoController::class, 'pokemones']);
 $router->get('/api/ranking/global', [RetoController::class, 'rankingGlobal']);
 $router->post('/api/partida/intento', [PartidaController::class, 'intento']);
 $router->get('/api/auth/me', [AuthController::class, 'me']);
+$router->post('/api/auth/register', [AuthController::class, 'register']);
 $router->post('/api/auth/login', [AuthController::class, 'login']);
 $router->post('/api/auth/logout', [AuthController::class, 'logout']);
 

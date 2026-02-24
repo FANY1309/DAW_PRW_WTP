@@ -4,6 +4,7 @@ import {
     loadGlobalRanking,
     submitAttempt,
     getCurrentUser,
+    registerUser,
     loginUser,
     logoutUser
 } from './modules/game.js';
@@ -24,6 +25,11 @@ const loginModal = document.getElementById('login-modal');
 const loginForm = document.getElementById('login-form');
 const loginIdentifier = document.getElementById('login-identifier');
 const loginPassword = document.getElementById('login-password');
+const registerForm = document.getElementById('register-form');
+const registerUsuario = document.getElementById('register-usuario');
+const registerEmail = document.getElementById('register-email');
+const registerNombre = document.getElementById('register-nombre');
+const registerPassword = document.getElementById('register-password');
 const logoutButton = document.getElementById('logout-button');
 const showRankingButton = document.getElementById('show-ranking-button');
 const rankingModal = document.getElementById('ranking-modal');
@@ -163,6 +169,38 @@ function vincularEventosAuth() {
         });
     }
 
+    // si el registro está disponible, vinculamos su evento,
+    // Si no, se queda oculto por CSS y no se puede usar
+    if (registerForm) {
+        registerForm.addEventListener('submit', async function (event) {
+            event.preventDefault();
+
+            const usuario = registerUsuario ? registerUsuario.value.trim() : '';
+            const email = registerEmail ? registerEmail.value.trim() : '';
+            const nombre = registerNombre ? registerNombre.value.trim() : '';
+            const password = registerPassword ? registerPassword.value : '';
+
+            if (usuario === '' || email === '' || nombre === '' || password === '') {
+                setAuthStatus('Debes completar todos los campos de registro.', true);
+                return;
+            }
+
+            const response = await registerUser(usuario, email, nombre, password);
+            debugNode.textContent = JSON.stringify(response.data, null, 2);
+
+            if (!response.ok || !response.data.ok) {
+                setAuthStatus(response.data.message || 'No se pudo completar el registro.', true);
+                return;
+            }
+
+            setAuthStatus('Registro completado. Ahora inicia sesión.', false);
+
+            if (registerPassword) {
+                registerPassword.value = '';
+            }
+        });
+    }
+
     if (logoutButton) {
         logoutButton.addEventListener('click', async function () {
             const response = await logoutUser();
@@ -276,6 +314,18 @@ function mostrarEstadoInvitado() {
     if (loginPassword) {
         loginPassword.disabled = false;
     }
+    if (registerUsuario) {
+        registerUsuario.disabled = false;
+    }
+    if (registerEmail) {
+        registerEmail.disabled = false;
+    }
+    if (registerNombre) {
+        registerNombre.disabled = false;
+    }
+    if (registerPassword) {
+        registerPassword.disabled = false;
+    }
 
     cerrarRanking();
     dateNode.textContent = 'Cargando reto...';
@@ -302,6 +352,18 @@ function mostrarEstadoUsuarioAuth() {
     }
     if (showRankingButton) {
         showRankingButton.hidden = false;
+    }
+    if (registerUsuario) {
+        registerUsuario.disabled = true;
+    }
+    if (registerEmail) {
+        registerEmail.disabled = true;
+    }
+    if (registerNombre) {
+        registerNombre.disabled = true;
+    }
+    if (registerPassword) {
+        registerPassword.disabled = true;
     }
 
     setAuthStatus('Sesión activa: ' + (userSession.nombre || userSession.usuario) + '. Tus partidas se guardan.', false);
