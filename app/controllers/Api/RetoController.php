@@ -6,6 +6,7 @@ use App\Core\Controller;
 use App\Core\Response;
 use App\Services\GameService;
 
+// Esta clase devuelve respuestas en formato JSON para las rutas relacionadas con el reto diario
 class RetoController extends Controller
 {
     public function hoy(): void
@@ -33,6 +34,23 @@ class RetoController extends Controller
                 'id' => (int)$reto['pokemon_id'],
                 'imagen' => $reto['imagen'],
             ],
+        ]);
+    }
+
+    // Capturamos la lista de pokemon para el select del index
+    public function pokemones(): void
+    {
+        $service = new GameService();
+        $pokemones = $service->getListaPokemons();
+
+        Response::json([
+            'ok' => true,
+            'items' => array_map(static function (array $pokemon): array {
+                return [
+                    'id' => (int)$pokemon['id'],
+                    'nombre' => (string)$pokemon['nombre'],
+                ];
+            }, $pokemones),
         ]);
     }
 }

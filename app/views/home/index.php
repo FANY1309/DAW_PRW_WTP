@@ -3,8 +3,9 @@
     <p id="challenge-date">Cargando reto...</p>
 
     <form id="guess-form" autocomplete="off">
-        <label for="pokemon-name">Tu intento</label>
-        <input id="pokemon-name" name="pokemon" type="text" placeholder="Ej: pikachu" required>
+        <label for="pokemon-search">Tu intento</label>
+        <input id="pokemon-search" type="search" placeholder="Buscar pokemon..." autocomplete="off">
+        <ul id="pokemon-suggestions" class="pokemon-suggestions" hidden></ul>
         <button type="submit">Probar</button>
     </form>
 

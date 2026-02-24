@@ -6,6 +6,11 @@ export async function loadChallenge() {
     return apiFetch('api/reto/hoy');
 }
 
+// Esta función pide al backend la lista de pokemons disponibles
+export async function loadPokemonList() {
+    return apiFetch('api/pokemon/lista');
+}
+
 // Esta función envía el intento del jugador (nombre del Pokémon).
 // Usamos POST porque estamos mandando datos.
 // JSON.stringify convierte el objeto a texto JSON.

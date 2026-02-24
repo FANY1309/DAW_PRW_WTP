@@ -9,6 +9,7 @@ require __DIR__ . '/../app/core/Model.php';
 require __DIR__ . '/../app/controllers/HomeController.php';
 require __DIR__ . '/../app/models/RetoDiario.php';
 require __DIR__ . '/../app/models/Partida.php';
+require __DIR__ . '/../app/models/Pokemon.php';
 require __DIR__ . '/../app/services/GameService.php';
 require __DIR__ . '/../app/controllers/Api/RetoController.php';
 require __DIR__ . '/../app/controllers/Api/PartidaController.php';
@@ -27,6 +28,7 @@ $router = new Router();
 // registramos los controladores correspondientes
 $router->get('/', [HomeController::class, 'index']);
 $router->get('/api/reto/hoy', [RetoController::class, 'hoy']);
+$router->get('/api/pokemon/lista', [RetoController::class, 'pokemones']);
 $router->post('/api/partida/intento', [PartidaController::class, 'intento']);
 
 // capturamos el método HTTP actual (GET, POST, etc.).

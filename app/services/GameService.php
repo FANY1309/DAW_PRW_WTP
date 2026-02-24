@@ -4,22 +4,31 @@ namespace App\Services;
 
 use App\Models\RetoDiario;
 use App\Models\Partida;
+use App\Models\Pokemon;
 
 class GameService
 {
     private RetoDiario $retoModel;
     private Partida $partidaModel;
+    private Pokemon $pokemonModel;
 
     public function __construct()
     {
         $this->retoModel = new RetoDiario();
         $this->partidaModel = new Partida();
+        $this->pokemonModel = new Pokemon();
     }
 
     // esta función devuelve el reto diario de hoy o, en su defecto, el último reto diario disponible
     public function getTodayChallenge(): ?array
     {
         return $this->retoModel->findTodayActive() ?? $this->retoModel->findAnyActive();
+    }
+
+    // esta función devuelve la lista completa de pokemones para el select del index
+    public function getListaPokemons(): array
+    {
+        return $this->pokemonModel->ListaTodos();
     }
 
     // esta función ejecuta el intento al darle al botón "Probar"

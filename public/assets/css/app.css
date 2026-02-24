@@ -55,6 +55,31 @@ button {
     border: none;
 }
 
+.pokemon-suggestions {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    max-height: 220px;
+    overflow-y: auto;
+    background: #fff;
+}
+
+.pokemon-suggestion-item {
+    padding: 9px 12px;
+    cursor: pointer;
+    border-bottom: 1px solid #eef3fb;
+}
+
+.pokemon-suggestion-item:last-child {
+    border-bottom: none;
+}
+
+.pokemon-suggestion-item:hover {
+    background: #f3f8ff;
+}
+
 .result {
     min-height: 24px;
     font-weight: 600;
