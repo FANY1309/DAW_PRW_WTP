@@ -8,13 +8,28 @@ use App\Models\Pokemon;
 
 class GameService
 {
-    private int $usuarioId = 1; // TODO: reemplazar al implementar auth
+    private ?int $usuarioId = null;
+    private ?string $userRole = null;
     private RetoDiario $retoModel;
     private Partida $partidaModel;
     private Pokemon $pokemonModel;
 
     public function __construct()
     {
+        // Lee datos de autenticacion de la sesion
+        $auth = $_SESSION['auth'] ?? null;
+        if (is_array($auth)) {
+            // Toma el id del usuario solo si viene como entero valido mayor que 0
+            $candidateId = (int)($auth['id'] ?? 0);
+            if ($candidateId > 0) {
+                $this->usuarioId = $candidateId;
+            }
+
+            // Normaliza el rol en minúsculas; si no existe, se mantiene null
+            $role = trim((string)($auth['rol'] ?? ''));
+            $this->userRole = $role !== '' ? strtolower($role) : null;
+        }
+
         $this->retoModel = new RetoDiario();
         $this->partidaModel = new Partida();
         $this->pokemonModel = new Pokemon();
@@ -35,6 +50,10 @@ class GameService
     // Consulta rápida para el frontend: permite bloquear el formulario al entrar al index.
     public function hasSolvedTodayChallenge(): bool
     {
+        if (!$this->puedeGuardarIntentos()) {
+            return false;
+        }
+
         $reto = $this->getTodayChallenge();
         if (!$reto) {
             return false;
@@ -60,24 +79,20 @@ class GameService
         // Usamos el id del reto activo para comprobar histórico de partidas del usuario.
         $retoId = (int)$reto['id'];
 
-        // si ya acerto este reto, bloqueamos nuevos envíos
-        if ($this->partidaModel->hasCorrectAttempt($this->usuarioId, $retoId)) {
-            return [
-                'ok' => false,
-                'alreadySolved' => true, // Flag consumido por frontend/controlador para bloqueo y mensaje.
-                'message' => 'Ya acertaste el reto de hoy. Vuelve mañana para un nuevo reto.',
-            ];
-        }
-
         // transformamos los string a comparar en minúsculas para saber si el intento es acertado o no
         $target = strtolower(trim($reto['nombre']));
         $current = strtolower(trim($guess));
         $isCorrect = $target === $current;
 
-        // Guardamos el intento SIEMPRE, sea acierto o fallo
-        $partidaId = $this->partidaModel->saveAttempt($this->usuarioId, $retoId, $isCorrect ? 'acierto' : 'fallo');
-        // Solo contamos fallos cuando realmente falló
-        $intentosFallidos = $isCorrect ? 0 : $this->partidaModel->countFailedAttempts($this->usuarioId, $retoId);
+        $partidaId = null;
+        $intentosFallidos = 0;
+
+        if ($this->puedeGuardarIntentos()) {
+            $partidaId = $this->partidaModel->saveAttempt($this->usuarioId, $retoId, $isCorrect ? 'acierto' : 'fallo');
+            $intentosFallidos = $isCorrect ? 0 : $this->partidaModel->countFailedAttempts($this->usuarioId, $retoId);
+        } else {
+            $intentosFallidos = $isCorrect ? 0 : $this->registrarIntentosFallidosInvitado($retoId);
+        }
 
         return [
             'ok' => true,
@@ -87,7 +102,35 @@ class GameService
             'pokemon' => $isCorrect ? $reto['nombre'] : null,
             'pista' => $isCorrect ? null : $this->montarPistas($reto, $intentosFallidos),
             'message' => $isCorrect ? 'Correcto, adivinaste.' : 'No coincide. Intenta de nuevo.',
+            'persisted' => $this->puedeGuardarIntentos(),
         ];
+    }
+
+    // Verifica si el usuario actual tiene permisos para guardar intentos en la base de datos
+    private function puedeGuardarIntentos(): bool
+    {
+        if (!$this->usuarioId || !$this->userRole) {
+            return false;
+        }
+
+        return in_array($this->userRole, ['admin', 'usuario'], true);
+    }
+
+    // Para usuarios no autenticados, registramos los intentos fallidos en la sesión para poder mostrar pistas progresivas
+    private function registrarIntentosFallidosInvitado(int $retoId): int
+    {
+        if (!isset($_SESSION['guest_attempts']) || !is_array($_SESSION['guest_attempts'])) {
+            $_SESSION['guest_attempts'] = [];
+        }
+
+        if (!isset($_SESSION['guest_attempts'][$retoId])) {
+            $_SESSION['guest_attempts'][$retoId] = [
+                'failed' => 0,
+            ];
+        }
+
+        $_SESSION['guest_attempts'][$retoId]['failed']++;
+        return (int)$_SESSION['guest_attempts'][$retoId]['failed'];
     }
 
     // Montamos los datos que pasaremos para montar las pistas 

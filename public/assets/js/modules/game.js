@@ -20,3 +20,23 @@ export async function submitAttempt(nombre) {
         body: JSON.stringify({ nombre }),
     });
 }
+
+// Consulta la sesion actual para saber si hay un usuario autenticado
+export async function getCurrentUser() {
+    return apiFetch('api/auth/me');
+}
+
+// Inicia sesion enviando identificador (usuario/email) y contraseña
+export async function loginUser(identifier, password) {
+    return apiFetch('api/auth/login', {
+        method: 'POST',
+        body: JSON.stringify({ identifier, password }),
+    });
+}
+
+// Cierra la sesion actual del usuario autenticado
+export async function logoutUser() {
+    return apiFetch('api/auth/logout', {
+        method: 'POST',
+    });
+}

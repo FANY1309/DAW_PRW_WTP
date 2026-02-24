@@ -54,4 +54,16 @@ abstract class Controller
 
         return [];
     }
+
+    // Toma el id del usuario actual desde la sesión, o null si no hay usuario autenticado
+    protected function idUsuarioActual(): ?int
+    {
+        $auth = $_SESSION['auth'] ?? null;
+        if (!is_array($auth)) {
+            return null;
+        }
+
+        $userId = (int)($auth['id'] ?? 0);
+        return $userId > 0 ? $userId : null;
+    }
 }
