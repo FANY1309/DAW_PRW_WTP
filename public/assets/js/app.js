@@ -35,6 +35,7 @@ const registerUsuario = document.getElementById('register-usuario');
 const registerEmail = document.getElementById('register-email');
 const registerNombre = document.getElementById('register-nombre');
 const registerPassword = document.getElementById('register-password');
+const registerStatusNode = document.getElementById('register-status');
 const logoutButton = document.getElementById('logout-button');
 const showRankingButton = document.getElementById('show-ranking-button');
 const rankingModal = document.getElementById('ranking-modal');
@@ -158,6 +159,7 @@ function vincularEventosAuth() {
 
     if (showRegisterButton) {
         showRegisterButton.addEventListener('click', function () {
+            setRegisterStatus('', false);
             abrirVentanaRegistro();
         });
     }
@@ -232,18 +234,59 @@ function vincularEventosAuth() {
             const password = registerPassword ? registerPassword.value : '';
 
             if (usuario === '' || email === '' || nombre === '' || password === '') {
-                setAuthStatus('Debes completar todos los campos de registro.', true);
+                const message = 'Debes completar todos los campos de registro.';
+                setRegisterStatus(message, true);
+                setAuthStatus(message, true);
                 return;
             }
 
-            const response = await registerUser(usuario, email, nombre, password);
+            if (usuario.length < 3 || usuario.length > 50) {
+                const message = 'El usuario debe tener entre 3 y 50 caracteres.';
+                setRegisterStatus(message, true);
+                setAuthStatus(message, true);
+                return;
+            }
+
+            if (nombre.length < 2 || nombre.length > 120) {
+                const message = 'El nombre debe tener entre 2 y 120 caracteres.';
+                setRegisterStatus(message, true);
+                setAuthStatus(message, true);
+                return;
+            }
+
+            if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+                const message = 'El email no es valido.';
+                setRegisterStatus(message, true);
+                setAuthStatus(message, true);
+                return;
+            }
+
+            if (password.length < 6) {
+                const message = 'La contraseña debe tener al menos 6 caracteres.';
+                setRegisterStatus(message, true);
+                setAuthStatus(message, true);
+                return;
+            }
+
+            let response;
+            try {
+                response = await registerUser(usuario, email, nombre, password);
+            } catch (error) {
+                const message = 'No se pudo conectar con el servidor de registro.';
+                setRegisterStatus(message, true);
+                setAuthStatus(message, true);
+                return;
+            }
             setDebug(response.data);
 
             if (!response.ok || !response.data.ok) {
-                setAuthStatus(response.data.message || 'No se pudo completar el registro.', true);
+                const message = response.data.message || 'No se pudo completar el registro.';
+                setRegisterStatus(message, true);
+                setAuthStatus(message, true);
                 return;
             }
 
+            setRegisterStatus('Registro completado. Ahora inicia sesión.', false);
             setAuthStatus('Registro completado. Ahora inicia sesión.', false);
             if (registerPassword) {
                 registerPassword.value = '';
@@ -492,6 +535,7 @@ function mostrarEstadoInvitado() {
     resultNode.classList.remove('error');
     resultNode.classList.remove('success');
     clearDebug();
+    setRegisterStatus('', false);
     setAdminSyncStatus('', false);
     setAdminChallengeStatus('', false);
     ocultarPistas();
@@ -540,6 +584,7 @@ function mostrarEstadoUsuarioAuth() {
     }
 
     setAuthStatus('Sesión activa: ' + (userSession.nombre || userSession.usuario) + '. Tus partidas se guardan.', false);
+    setRegisterStatus('', false);
     if (!isAdmin) {
         setAdminSyncStatus('', false);
         setAdminChallengeStatus('', false);
@@ -556,6 +601,15 @@ function setAuthStatus(message, isError) {
 
     authStatusNode.textContent = message;
     authStatusNode.classList.toggle('error', Boolean(isError));
+}
+
+function setRegisterStatus(message, isError) {
+    if (!registerStatusNode) {
+        return;
+    }
+
+    registerStatusNode.textContent = message;
+    registerStatusNode.classList.toggle('error', Boolean(isError));
 }
 
 // Muestra un mensaje de estado para la sincronización de pokemons en el panel de administración, solo para admins
@@ -643,6 +697,7 @@ function abrirVentanaRegistro() {
     }
 
     cerrarVentanaLogin();
+    setRegisterStatus('', false);
     registerModal.hidden = false;
 
     if (registerUsuario) {
@@ -656,6 +711,7 @@ function cerrarVentanaRegistro() {
         return;
     }
 
+    setRegisterStatus('', false);
     registerModal.hidden = true;
 }
 

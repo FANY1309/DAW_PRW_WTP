@@ -324,6 +324,10 @@ select:disabled {
     gap: 8px;
 }
 
+.login-form .auth-status {
+    margin: 2px 0 0;
+}
+
 .close-login-button,
 .close-ranking-button {
     width: 34px;

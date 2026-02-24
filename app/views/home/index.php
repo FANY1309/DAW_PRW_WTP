@@ -42,6 +42,7 @@
                     <label for="register-password">Contraseña</label>
                     <input id="register-password" type="password" placeholder="mínimo 6 carácteres">
 
+                    <p id="register-status" class="auth-status" aria-live="polite"></p>
                     <button type="submit">Registrarme</button>
                 </form>
             </div>
