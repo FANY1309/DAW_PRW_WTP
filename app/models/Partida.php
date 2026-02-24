@@ -71,5 +71,48 @@ class Partida extends Model
 
         return (bool)$stmt->fetchColumn();
     }
+
+    // Devuelve el ranking global con puntos acumulados por usuario (ordenado de mayor a menor)
+    public function getGlobalRanking(?int $limit = 50): array
+    {
+        $sql = "
+            SELECT
+                u.id AS usuarioId,
+                u.usuario AS usuario,
+                u.nombre AS nombre,
+                SUM(GREATEST(10, 100 - (resumen.fallos * 15))) AS puntosTotales,
+                COUNT(*) AS retosResueltos
+            FROM (
+                SELECT
+                    p.idUsuario,
+                    p.idReto,
+                    SUM(CASE WHEN p.resultado = 'fallo' THEN 1 ELSE 0 END) AS fallos,
+                    SUM(CASE WHEN p.resultado = 'acierto' THEN 1 ELSE 0 END) AS aciertos
+                FROM partida p
+                GROUP BY p.idUsuario, p.idReto
+                HAVING aciertos > 0
+            ) AS resumen
+            INNER JOIN usuario u
+                ON u.id = resumen.idUsuario
+            WHERE u.estado = 1
+            GROUP BY u.id, u.usuario, u.nombre
+            ORDER BY puntosTotales DESC, retosResueltos DESC, u.usuario ASC
+        ";
+
+        if ($limit !== null && $limit > 0) {
+            $sql .= " LIMIT :limite";
+        }
+
+        $stmt = $this->db->pdo()->prepare($sql);
+
+        if ($limit !== null && $limit > 0) {
+            $stmt->bindValue(':limite', $limit, \PDO::PARAM_INT);
+        }
+
+        $stmt->execute();
+        $rows = $stmt->fetchAll();
+
+        return is_array($rows) ? $rows : [];
+    }
 }
 

@@ -22,8 +22,32 @@
         </div>
 
         <button id="logout-button" type="button" class="logout-button" hidden>Cerrar sesión</button>
+        <button id="show-ranking-button" type="button" class="show-ranking-button" hidden>Ver ranking global</button>
         <p id="auth-status" class="auth-status"></p>
     </section>
+
+    <div id="ranking-modal" class="ranking-modal" hidden>
+        <div class="ranking-modal-card" role="dialog" aria-modal="true" aria-labelledby="ranking-title">
+            <div class="ranking-modal-header">
+                <h2 id="ranking-title">Ranking global</h2>
+                <button id="close-ranking-button" type="button" class="close-ranking-button" aria-label="Cerrar ranking">x</button>
+            </div>
+            <p id="ranking-me" class="ranking-me"></p>
+            <div class="ranking-table-wrap">
+                <table class="ranking-table">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Jugador</th>
+                            <th>Puntos</th>
+                            <th>Retos</th>
+                        </tr>
+                    </thead>
+                    <tbody id="ranking-body"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
 
     <p id="challenge-date">Cargando reto...</p>
 

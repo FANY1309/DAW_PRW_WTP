@@ -11,6 +11,11 @@ export async function loadPokemonList() {
     return apiFetch('api/pokemon/lista');
 }
 
+// Carga el ranking global para usuarios autenticados
+export async function loadGlobalRanking() {
+    return apiFetch('api/ranking/global');
+}
+
 // Esta función envía el intento del jugador (nombre del Pokémon).
 // Usamos POST porque estamos mandando datos.
 // JSON.stringify convierte el objeto a texto JSON.

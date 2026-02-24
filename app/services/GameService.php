@@ -145,6 +145,57 @@ class GameService
         ];
     }
 
+    // Entrega el ranking global y, si existe sesion, la posicion del usuario autenticado
+    public function getGlobalRanking(int $topLimit = 20): array
+    {
+        $rankingCompleto = $this->partidaModel->getGlobalRanking(null);
+        $top = array_slice($rankingCompleto, 0, max(1, $topLimit));
+
+        $miPosicion = null;
+        $miResumen = null;
+
+        if ($this->usuarioId !== null) {
+            $count = count($rankingCompleto);
+            for ($i = 0; $i < $count; $i++) {
+                $item = $rankingCompleto[$i];
+                if ((int)($item['usuarioId'] ?? 0) !== $this->usuarioId) {
+                    continue;
+                }
+
+                $miPosicion = $i + 1;
+                $miResumen = [
+                    'usuarioId' => (int)$item['usuarioId'],
+                    'usuario' => (string)$item['usuario'],
+                    'nombre' => (string)$item['nombre'],
+                    'puntosTotales' => (int)$item['puntosTotales'],
+                    'retosResueltos' => (int)$item['retosResueltos'],
+                ];
+                break;
+            }
+        }
+
+        $items = [];
+        $topCount = count($top);
+        for ($i = 0; $i < $topCount; $i++) {
+            $item = $top[$i];
+            $items[] = [
+                'posicion' => $i + 1,
+                'usuarioId' => (int)($item['usuarioId'] ?? 0),
+                'usuario' => (string)($item['usuario'] ?? ''),
+                'nombre' => (string)($item['nombre'] ?? ''),
+                'puntosTotales' => (int)($item['puntosTotales'] ?? 0),
+                'retosResueltos' => (int)($item['retosResueltos'] ?? 0),
+            ];
+        }
+
+        return [
+            'items' => $items,
+            'miPosicion' => $miPosicion,
+            'miResumen' => $miResumen,
+            'totalUsuariosRankeados' => count($rankingCompleto),
+        ];
+    }
+
     private function puedeGuardarIntentos(): bool
     {
         // Verifica si el usuario actual tiene permisos para guardar intentos en la base de datos

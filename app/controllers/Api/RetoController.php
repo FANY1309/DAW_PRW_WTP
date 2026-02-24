@@ -64,4 +64,27 @@ class RetoController extends Controller
             }, $pokemones),
         ]);
     }
+
+    // Devuelve ranking global y la posicion del usuario autenticado
+    public function rankingGlobal(): void
+    {
+        if (!$this->idUsuarioActual()) {
+            Response::json([
+                'ok' => false,
+                'message' => 'Debes iniciar sesion para ver el ranking global.',
+            ], 401);
+            return;
+        }
+
+        $service = new GameService();
+        $ranking = $service->getGlobalRanking(20);
+
+        Response::json([
+            'ok' => true,
+            'items' => $ranking['items'],
+            'miPosicion' => $ranking['miPosicion'],
+            'miResumen' => $ranking['miResumen'],
+            'totalUsuariosRankeados' => (int)$ranking['totalUsuariosRankeados'],
+        ]);
+    }
 }

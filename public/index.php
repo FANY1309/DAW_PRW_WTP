@@ -32,6 +32,7 @@ $router = new Router();
 $router->get('/', [HomeController::class, 'index']);
 $router->get('/api/reto/hoy', [RetoController::class, 'hoy']);
 $router->get('/api/pokemon/lista', [RetoController::class, 'pokemones']);
+$router->get('/api/ranking/global', [RetoController::class, 'rankingGlobal']);
 $router->post('/api/partida/intento', [PartidaController::class, 'intento']);
 $router->get('/api/auth/me', [AuthController::class, 'me']);
 $router->post('/api/auth/login', [AuthController::class, 'login']);

@@ -1,6 +1,7 @@
 import {
     loadChallenge,
     loadPokemonList,
+    loadGlobalRanking,
     submitAttempt,
     getCurrentUser,
     loginUser,
@@ -24,6 +25,11 @@ const loginForm = document.getElementById('login-form');
 const loginIdentifier = document.getElementById('login-identifier');
 const loginPassword = document.getElementById('login-password');
 const logoutButton = document.getElementById('logout-button');
+const showRankingButton = document.getElementById('show-ranking-button');
+const rankingModal = document.getElementById('ranking-modal');
+const closeRankingButton = document.getElementById('close-ranking-button');
+const rankingBody = document.getElementById('ranking-body');
+const rankingMeNode = document.getElementById('ranking-me');
 const authStatusNode = document.getElementById('auth-status');
 
 let allPokemons = [];
@@ -32,6 +38,7 @@ let userSession = null;
 async function iniciar() {
     vincularBusquedaPokemon();
     vincularEventosAuth();
+    vincularEventosRanking();
     await refrescarSesionJuego();
 }
 
@@ -160,7 +167,31 @@ function vincularEventosAuth() {
         logoutButton.addEventListener('click', async function () {
             const response = await logoutUser();
             debugNode.textContent = JSON.stringify(response.data, null, 2);
+            cerrarRanking();
             await refrescarSesionJuego();
+        });
+    }
+}
+
+// Vincula eventos para mostrar/ocultar el ranking global, y para cargar el ranking al abrirlo
+function vincularEventosRanking() {
+    if (showRankingButton) {
+        showRankingButton.addEventListener('click', async function () {
+            await abrirRanking();
+        });
+    }
+
+    if (closeRankingButton) {
+        closeRankingButton.addEventListener('click', function () {
+            cerrarRanking();
+        });
+    }
+
+    if (rankingModal) {
+        rankingModal.addEventListener('click', function (event) {
+            if (event.target === rankingModal) {
+                cerrarRanking();
+            }
         });
     }
 }
@@ -236,6 +267,9 @@ function mostrarEstadoInvitado() {
     if (logoutButton) {
         logoutButton.hidden = true;
     }
+    if (showRankingButton) {
+        showRankingButton.hidden = true;
+    }
     if (loginIdentifier) {
         loginIdentifier.disabled = false;
     }
@@ -243,6 +277,7 @@ function mostrarEstadoInvitado() {
         loginPassword.disabled = false;
     }
 
+    cerrarRanking();
     dateNode.textContent = 'Cargando reto...';
     resultNode.textContent = '';
     resultNode.classList.remove('error');
@@ -264,6 +299,9 @@ function mostrarEstadoUsuarioAuth() {
     }
     if (logoutButton) {
         logoutButton.hidden = false;
+    }
+    if (showRankingButton) {
+        showRankingButton.hidden = false;
     }
 
     setAuthStatus('Sesión activa: ' + (userSession.nombre || userSession.usuario) + '. Tus partidas se guardan.', false);
@@ -297,6 +335,95 @@ function cerrarVentanaLogin() {
     }
 
     loginModal.hidden = true;
+}
+
+// Abre el modal de ranking global y carga los datos desde el backend para mostrarlo
+async function abrirRanking() {
+    if (!rankingModal) {
+        return;
+    }
+
+    rankingModal.hidden = false;
+    await cargarRankingGlobal();
+}
+
+// Cierra el modal de ranking global y limpia su contenido para no mostrar datos viejos al reabrirlo
+function cerrarRanking() {
+    if (!rankingModal) {
+        return;
+    }
+
+    rankingModal.hidden = true;
+}
+
+// Pide al backend el ranking global y lo muestra, junto con la posición del usuario autenticado si está disponible
+async function cargarRankingGlobal() {
+    if (!rankingBody || !rankingMeNode) {
+        return;
+    }
+
+    rankingBody.innerHTML = '<tr><td colspan="4">Cargando ranking...</td></tr>';
+    rankingMeNode.textContent = '';
+
+    const response = await loadGlobalRanking();
+    if (!response.ok || !response.data.ok) {
+        rankingBody.innerHTML = '<tr><td colspan="4">No se pudo cargar el ranking.</td></tr>';
+        rankingMeNode.textContent = response.data && response.data.message
+            ? response.data.message
+            : 'No se pudo obtener tu posición.';
+        return;
+    }
+
+    renderizarRanking(response.data.items || []);
+    renderizarMiPosicion(response.data);
+}
+
+// Muestra la tabla de ranking global con los datos obtenidos del backend
+function renderizarRanking(items) {
+    if (!rankingBody) {
+        return;
+    }
+
+    if (!Array.isArray(items) || items.length === 0) {
+        rankingBody.innerHTML = '<tr><td colspan="4">Aún no hay usuarios rankeados.</td></tr>';
+        return;
+    }
+
+    let html = '';
+
+    for (let i = 0; i < items.length; i++) {
+        const item = items[i];
+        const jugador = item.nombre && String(item.nombre).trim() !== '' ? item.nombre : item.usuario;
+        html += `
+            <tr>
+                <td>${Number(item.posicion) || i + 1}</td>
+                <td>${escaparTextoHtml(jugador || '')}</td>
+                <td>${Number(item.puntosTotales) || 0}</td>
+                <td>${Number(item.retosResueltos) || 0}</td>
+            </tr>
+        `;
+    }
+
+    rankingBody.innerHTML = html;
+}
+
+// Renderiza la posición del usuario autenticado en el ranking global
+function renderizarMiPosicion(data) {
+    if (!rankingMeNode) {
+        return;
+    }
+
+    const miPosicion = Number(data && data.miPosicion);
+    const miResumen = data && data.miResumen ? data.miResumen : null;
+
+    if (!Number.isFinite(miPosicion) || !miResumen) {
+        rankingMeNode.textContent = 'Todavía no tienes posición en el ranking global.';
+        return;
+    }
+
+    const puntos = Number(miResumen.puntosTotales) || 0;
+    const retos = Number(miResumen.retosResueltos) || 0;
+    rankingMeNode.textContent = `Tu posición actual: #${miPosicion} (${puntos} puntos, ${retos} retos resueltos).`;
 }
 
 // Desactiva interacción cuando el reto no está disponible o ya fue resuelto
