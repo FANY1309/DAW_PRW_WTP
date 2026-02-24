@@ -4,6 +4,7 @@ namespace App\Controllers\Api;
 
 use App\Core\Controller;
 use App\Core\Response;
+use App\Models\User;
 use App\Services\PokemonImportService;
 use Throwable;
 
@@ -32,6 +33,18 @@ class AdminPokemonController extends Controller
             return;
         }
 
+        // Validar que el usuario de sesion siga existiendo en BD.
+        $adminUserId = (int)$auth['id'];
+        $userModel = new User();
+        $admin = $userModel->encontrarPorID($adminUserId);
+        if (!$admin) {
+            Response::json([
+                'ok' => false,
+                'message' => 'Tu sesion de administrador ya no es valida. Cierra sesion e inicia nuevamente.',
+            ], 401);
+            return;
+        }
+
         // Validar input
         $payload = $this->inputJson();
         $generacion = (int)($payload['generacion'] ?? 0);
@@ -48,7 +61,7 @@ class AdminPokemonController extends Controller
 
         // Manejar posibles errores durante la sincronización
         try {
-            $resultado = $service->sincronizarPorGeneracion($generacion, (int)$auth['id']);
+            $resultado = $service->sincronizarPorGeneracion($generacion, $adminUserId);
         } catch (Throwable $e) {
             Response::json([
                 'ok' => false,

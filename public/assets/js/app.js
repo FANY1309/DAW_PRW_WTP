@@ -316,13 +316,22 @@ function vincularEventosAdmin() {
 
         const data = response.data.data || {};
         const errores = Array.isArray(data.errores) ? data.errores.length : 0;
-        const resumen = [
+        const resumenParts = [
             'Generacion ' + generation + ' sincronizada.',
             'Procesados: ' + (Number(data.totalProcesados) || 0),
             'Creados: ' + (Number(data.creados) || 0),
             'Actualizados: ' + (Number(data.actualizados) || 0),
             'Errores: ' + errores,
-        ].join(' ');
+        ];
+
+        if (errores > 0) {
+            const primerError = data.errores[0] || {};
+            const pokemonConError = primerError.pokemon ? String(primerError.pokemon) : 'desconocido';
+            const detalleError = primerError.error ? String(primerError.error) : 'sin detalle';
+            resumenParts.push('Primer error (' + pokemonConError + '): ' + detalleError);
+        }
+
+        const resumen = resumenParts.join(' ');
 
         setAdminSyncStatus(resumen, false);
         bloquearAdminSync(false);
