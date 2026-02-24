@@ -1,26 +1,34 @@
-<section class="page">
+﻿<section class="page">
     <h1>WhosThatPokemon - Pokedle MVP</h1>
 
     <section class="auth-panel">
-        <button id="show-login-button" type="button" class="show-login-button">Iniciar sesión</button>
+        <div class="auth-actions">
+            <button id="show-login-button" type="button" class="show-login-button">Iniciar sesión</button>
+            <button id="show-register-button" type="button" class="show-register-button">Registrarse</button>
+        </div>
         <div id="login-modal" class="login-modal" hidden>
             <div class="login-modal-card" role="dialog" aria-modal="true" aria-labelledby="login-title">
                 <div class="login-modal-header">
-                    <h2 id="login-title">Iniciar sesión</h2>
-                    <button id="close-login-button" type="button" class="close-login-button" aria-label="Cerrar ventana de inicio de sesión">x</button>
+                    <h2 id="login-title">Iniciar sesion</h2>
+                    <button id="close-login-button" type="button" class="close-login-button" aria-label="Cerrar ventana de inicio de sesion">x</button>
                 </div>
                 <form id="login-form" class="login-form" autocomplete="off">
                     <label for="login-identifier">Usuario o email</label>
                     <input id="login-identifier" type="text" placeholder="usuario o correo">
 
-                    <label for="login-password">Contraseña</label>
-                    <input id="login-password" type="password" placeholder="contraseña">
+                    <label for="login-password">Contrasena</label>
+                    <input id="login-password" type="password" placeholder="contrasena">
 
                     <button type="submit">Entrar</button>
                 </form>
-
-                <hr class="auth-divider">
-
+            </div>
+        </div>
+        <div id="register-modal" class="login-modal" hidden>
+            <div class="login-modal-card" role="dialog" aria-modal="true" aria-labelledby="register-title">
+                <div class="login-modal-header">
+                    <h2 id="register-title">Registrarse</h2>
+                    <button id="close-register-button" type="button" class="close-login-button" aria-label="Cerrar ventana de registro">x</button>
+                </div>
                 <form id="register-form" class="login-form" autocomplete="off">
                     <label for="register-usuario">Usuario</label>
                     <input id="register-usuario" type="text" placeholder="tu usuario">
@@ -38,6 +46,7 @@
                 </form>
             </div>
         </div>
+        
 
         <button id="logout-button" type="button" class="logout-button" hidden>Cerrar sesión</button>
         <button id="show-ranking-button" type="button" class="show-ranking-button" hidden>Ver ranking global</button>
@@ -82,3 +91,4 @@
 
     <pre id="debug" class="debug"></pre>
 </section>
+

@@ -47,7 +47,14 @@ h1 {
     font-size: 18px;
 }
 
-.show-login-button {
+.auth-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.show-login-button,
+.show-register-button {
     width: auto;
 }
 
@@ -101,12 +108,6 @@ h1 {
 .login-form {
     display: grid;
     gap: 8px;
-}
-
-.auth-divider {
-    margin: 14px 0;
-    border: 0;
-    border-top: 1px solid var(--line);
 }
 
 .logout-button {

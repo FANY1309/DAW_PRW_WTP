@@ -20,8 +20,11 @@ const suggestionsNode = document.getElementById('pokemon-suggestions');
 const submitButton = form ? form.querySelector('button[type="submit"]') : null;
 
 const showLoginButton = document.getElementById('show-login-button');
+const showRegisterButton = document.getElementById('show-register-button');
 const closeLoginButton = document.getElementById('close-login-button');
+const closeRegisterButton = document.getElementById('close-register-button');
 const loginModal = document.getElementById('login-modal');
+const registerModal = document.getElementById('register-modal');
 const loginForm = document.getElementById('login-form');
 const loginIdentifier = document.getElementById('login-identifier');
 const loginPassword = document.getElementById('login-password');
@@ -125,9 +128,21 @@ function vincularEventosAuth() {
         });
     }
 
+    if (showRegisterButton) {
+        showRegisterButton.addEventListener('click', function () {
+            abrirVentanaRegistro();
+        });
+    }
+
     if (closeLoginButton) {
         closeLoginButton.addEventListener('click', function () {
             cerrarVentanaLogin();
+        });
+    }
+
+    if (closeRegisterButton) {
+        closeRegisterButton.addEventListener('click', function () {
+            cerrarVentanaRegistro();
         });
     }
 
@@ -135,6 +150,14 @@ function vincularEventosAuth() {
         loginModal.addEventListener('click', function (event) {
             if (event.target === loginModal) {
                 cerrarVentanaLogin();
+            }
+        });
+    }
+
+    if (registerModal) {
+        registerModal.addEventListener('click', function (event) {
+            if (event.target === registerModal) {
+                cerrarVentanaRegistro();
             }
         });
     }
@@ -194,10 +217,11 @@ function vincularEventosAuth() {
             }
 
             setAuthStatus('Registro completado. Ahora inicia sesión.', false);
-
             if (registerPassword) {
                 registerPassword.value = '';
             }
+
+            cerrarVentanaRegistro();
         });
     }
 
@@ -205,6 +229,8 @@ function vincularEventosAuth() {
         logoutButton.addEventListener('click', async function () {
             const response = await logoutUser();
             debugNode.textContent = JSON.stringify(response.data, null, 2);
+            cerrarVentanaLogin();
+            cerrarVentanaRegistro();
             cerrarRanking();
             await refrescarSesionJuego();
         });
@@ -299,8 +325,14 @@ function mostrarEstadoInvitado() {
     if (showLoginButton) {
         showLoginButton.hidden = false;
     }
+    if (showRegisterButton) {
+        showRegisterButton.hidden = false;
+    }
     if (loginModal) {
         loginModal.hidden = true;
+    }
+    if (registerModal) {
+        registerModal.hidden = true;
     }
     if (logoutButton) {
         logoutButton.hidden = true;
@@ -344,8 +376,14 @@ function mostrarEstadoUsuarioAuth() {
     if (showLoginButton) {
         showLoginButton.hidden = true;
     }
+    if (showRegisterButton) {
+        showRegisterButton.hidden = true;
+    }
     if (loginModal) {
         loginModal.hidden = true;
+    }
+    if (registerModal) {
+        registerModal.hidden = true;
     }
     if (logoutButton) {
         logoutButton.hidden = false;
@@ -384,6 +422,7 @@ function abrirVentanaLogin() {
         return;
     }
 
+    cerrarVentanaRegistro();
     loginModal.hidden = false;
 
     if (loginIdentifier) {
@@ -397,6 +436,31 @@ function cerrarVentanaLogin() {
     }
 
     loginModal.hidden = true;
+}
+
+// Si el registro no está disponible, 
+// el botón para abrirlo se queda oculto por CSS y no se puede usar, 
+// así que no hay riesgo de error por elementos faltantes aquí. 
+function abrirVentanaRegistro() {
+    if (!registerModal) {
+        return;
+    }
+
+    cerrarVentanaLogin();
+    registerModal.hidden = false;
+
+    if (registerUsuario) {
+        registerUsuario.focus();
+    }
+}
+
+// Cierra el modal de registro
+function cerrarVentanaRegistro() {
+    if (!registerModal) {
+        return;
+    }
+
+    registerModal.hidden = true;
 }
 
 // Abre el modal de ranking global y carga los datos desde el backend para mostrarlo
