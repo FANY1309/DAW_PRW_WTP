@@ -1,6 +1,3 @@
--- WTP - Esquema de base de datos (según Diagrama E/R)
--- Pendiente de volcar el modelo exacto del diagrama.
-
 -- WTP - Esquema MySQL (según Diagrama E/R)
 -- Proyecto: WhosThatPokémon (WTP)
 -- Nota: Relación Pokémon—Tipo es N:M, se implementa con tabla puente.
