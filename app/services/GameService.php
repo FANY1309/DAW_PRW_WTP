@@ -90,7 +90,7 @@ class GameService
             return [
                 'ok' => false,
                 'alreadySolved' => true,
-                'message' => 'Ya acertaste el reto de hoy. Vuelve manana para un nuevo reto.',
+                'message' => 'Ya acertaste el reto de hoy. Vuelve mañana para un nuevo reto.',
                 'puntos' => (int)$summary['puntos'],
                 'intentosFallidosAntesDelAcierto' => (int)$summary['intentosFallidosAntesDelAcierto'],
             ];
