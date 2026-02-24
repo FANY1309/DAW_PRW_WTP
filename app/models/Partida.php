@@ -27,4 +27,26 @@ class Partida extends Model
         // Devolvemos el id del registro recién creado
         return (int)$this->db->pdo()->lastInsertId();
     }
+
+    // contamos los fallos de un usuario concreto en un reto concreto
+    public function countFailedAttempts(int $usuarioId, int $retoId): int
+    {
+        // Esto se usa para saber cuántas pistas debemos mostrar
+        $sql = "
+            SELECT COUNT(*) AS total
+            FROM partida
+            WHERE idUsuario = :usuario
+              AND idReto = :reto
+              AND resultado = 'fallo'
+        ";
+
+        $stmt = $this->db->pdo()->prepare($sql);
+        $stmt->execute([
+            ':usuario' => $usuarioId,
+            ':reto' => $retoId,
+        ]);
+
+        $row = $stmt->fetch();
+        return (int)($row['total'] ?? 0);
+    }
 }

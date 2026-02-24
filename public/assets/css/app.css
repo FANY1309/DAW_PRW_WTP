@@ -90,6 +90,23 @@ button {
     margin: 4px 0;
 }
 
+.hint-silhouette-wrap {
+    margin-top: 10px;
+}
+
+.hint-silhouette-wrap p {
+    margin: 0 0 8px;
+}
+
+.hint-silhouette {
+    display: block;
+    width: 180px;
+    max-width: 100%;
+    height: auto;
+    /* Convierte la imagen original en una silueta negra. */
+    filter: brightness(0) saturate(100%);
+}
+
 .debug {
     margin-top: 16px;
     padding: 12px;

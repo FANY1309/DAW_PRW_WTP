@@ -42,7 +42,12 @@ class GameService
         $isCorrect = $target === $current;
 
         // TODO: implementar auth, usamos un id de usuario ficticio
-        $partidaId = $this->partidaModel->saveAttempt(1, (int)$reto['id'], $isCorrect ? 'acierto' : 'fallo');
+        $usuarioId = 1;
+        $retoId = (int)$reto['id'];
+        // Guardamos el intento SIEMPRE, sea acierto o fallo.
+        $partidaId = $this->partidaModel->saveAttempt($usuarioId, $retoId, $isCorrect ? 'acierto' : 'fallo');
+        // Solo contamos fallos cuando realmente falló.
+        $intentosFallidos = $isCorrect ? 0 : $this->partidaModel->countFailedAttempts($usuarioId, $retoId);
 
         return [
             'ok' => true,
@@ -50,25 +55,53 @@ class GameService
             'partidaId' => $partidaId,
             'retoFecha' => $reto['fecha'],
             'pokemon' => $isCorrect ? $reto['nombre'] : null,
-            'pista' => $isCorrect ? null : $this->buildHint($reto),
+            'pista' => $isCorrect ? null : $this->montarPistas($reto, $intentosFallidos),
             'message' => $isCorrect ? 'Correcto, adivinaste.' : 'No coincide. Intenta de nuevo.',
         ];
     }
 
     // Montamos los datos que pasaremos para montar las pistas 
-    private function buildHint(array $reto): array
+    private function montarPistas(array $reto, int $intentosFallidos): array
     {
         $tipos = [];
         if (!empty($reto['tipos'])) {
             $tipos = array_values(array_filter(array_map('trim', explode(',', (string)$reto['tipos']))));
         }
 
-        return [
+        // Orden fijo de pistas progresivas:
+        // 1 - generacion
+        // 2 - tipo, 
+        // 3 - color, 
+        // 4 - altura, 
+        // 5 - peso, 
+        // 6 - silueta
+        $ordenPistas = [
             'generacion' => $reto['generacion'] !== null ? (int)$reto['generacion'] : null,
             'tipo' => $tipos,
             'color' => $reto['color'] !== null ? (string)$reto['color'] : null,
             'altura' => $reto['altura'] !== null ? (float)$reto['altura'] : null,
             'peso' => $reto['peso'] !== null ? (float)$reto['peso'] : null,
+            'silueta' => $reto['imagen'] !== null ? (string)$reto['imagen'] : null,
+        ];
+
+        $pistasVisibles = [];
+        // solo mostramos el numero de pistas según el número de intentos del usuario.
+        // Ejemplo: si intentosFallidos=2, solo mostramos las 2 primeras pistas del arreglo.
+        $maxPistas = min($intentosFallidos, count($ordenPistas));
+        $index = 0;
+
+        foreach ($ordenPistas as $key => $value) {
+            // si llega el numero máximo de pistas, sale del bucle
+            if ($index >= $maxPistas) {
+                break;
+            }
+            $pistasVisibles[$key] = $value;
+            $index++;
+        }
+
+        return [
+            'intentosFallidos' => $intentosFallidos,
+            'datos' => $pistasVisibles,
         ];
     }
 }

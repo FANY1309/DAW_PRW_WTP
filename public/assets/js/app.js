@@ -82,27 +82,72 @@ form.addEventListener('submit', async function (event) {
 // funcion para mostrar las pistas del pokemon en el html
 function mostrarPistas(hint) {
     // comprobamos que existen pistas que mostrar
-    if (!hint) {
+    if (!hint || !hint.datos) {
         ocultarPistas();
         return;
     }
 
-    // mostramos las pistas recibidas en el elemento html con id "hint"
-    const generation = hint.generacion ?? 'Desconocida';
-    const types = Array.isArray(hint.tipo) && hint.tipo.length > 0 ? hint.tipo.join(', ') : 'Desconocido';
-    const color = hint.color || 'Desconocido';
-    const height = hint.altura !== null && hint.altura !== undefined ? `${hint.altura} m` : 'Desconocida';
-    const weight = hint.peso !== null && hint.peso !== undefined ? `${hint.peso} kg` : 'Desconocido';
+    // "hint.datos" trae las pistas desbloqueadas según el numero de fallos
+    // Por eso preguntamos una por una si existe cada campo
+    const listaPistas = [];
+    const data = hint.datos;
 
+    if (data.generacion !== undefined) {
+        const generation = data.generacion ?? 'Desconocida';
+        listaPistas.push(`<li><strong>Generación:</strong> ${generation}</li>`);
+    }
+
+    if (data.tipo !== undefined) {
+        const types = Array.isArray(data.tipo) && data.tipo.length > 0 ? data.tipo.join(', ') : 'Desconocido';
+        listaPistas.push(`<li><strong>Tipo:</strong> ${types}</li>`);
+    }
+
+    if (data.color !== undefined) {
+        const color = data.color || 'Desconocido';
+        listaPistas.push(`<li><strong>Color:</strong> ${color}</li>`);
+    }
+
+    if (data.altura !== undefined) {
+        const height = data.altura !== null && data.altura !== undefined ? `${data.altura} m` : 'Desconocida';
+        listaPistas.push(`<li><strong>Altura:</strong> ${height}</li>`);
+    }
+
+    if (data.peso !== undefined) {
+        const weight = data.peso !== null && data.peso !== undefined ? `${data.peso} kg` : 'Desconocido';
+        listaPistas.push(`<li><strong>Peso:</strong> ${weight}</li>`);
+    }
+
+    let outputHtml = '';
+    if (data.silueta !== undefined && data.silueta) {
+        // Esta imagen no se muestra normal: se pinta en negro por CSS para que sea silueta
+        outputHtml = `
+            <div class="hint-silhouette-wrap">
+                <p><strong>Silueta:</strong></p>
+                <img class="hint-silhouette" src="${data.silueta}" alt="Silueta del Pokemon" loading="lazy">
+            </div>
+        `;
+    }
+
+    // Si no hay pistas de texto todavía, ocultamos el bloque para no dejar basura visual
+    if (listaPistas.length === 0) {
+        ocultarPistas();
+        return;
+    }
+
+    const failedText = hint.intentosFallidos ? `Intento fallido #${hint.intentosFallidos}` : 'Pista';
+    let htmlLista = '<ul>';
+
+    for (let i = 0; i < listaPistas.length; i++) {
+        htmlLista = htmlLista + listaPistas[i];
+    }
+
+    htmlLista = htmlLista + '</ul>';
     hintNode.innerHTML = `
-        <h3>Pista</h3>
+        <h3>${failedText}</h3>
         <ul>
-            <li><strong>Generaci&oacute;n:</strong> ${generation}</li>
-            <li><strong>Tipo:</strong> ${types}</li>
-            <li><strong>Color:</strong> ${color}</li>
-            <li><strong>Altura:</strong> ${height}</li>
-            <li><strong>Peso:</strong> ${weight}</li>
+            ${htmlLista}
         </ul>
+        ${outputHtml}
     `;
 
     hintNode.hidden = false;
