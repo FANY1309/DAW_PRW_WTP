@@ -256,6 +256,11 @@ class GameService
 
     private function obtenerResumenRetoResuelto(int $retoId): ?array
     {
+        // Los administradores pueden jugar sin limite diario.
+        if ($this->esAdmin()) {
+            return null;
+        }
+
         // Devuelve resumen cuando el reto ya fue resuelto por usuario o invitado
         if ($this->puedeGuardarIntentos()) {
             if (!$this->partidaModel->hasCorrectAttempt($this->usuarioId, $retoId)) {
@@ -287,6 +292,11 @@ class GameService
             'puntos' => $puntos,
             'intentosFallidosAntesDelAcierto' => $fallidos,
         ];
+    }
+
+    private function esAdmin(): bool
+    {
+        return $this->userRole === 'admin';
     }
 
     private function calcularPuntosPorAcierto(int $intentosFallidosPrevios): int

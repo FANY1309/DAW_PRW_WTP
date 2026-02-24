@@ -95,6 +95,7 @@ class Partida extends Model
             INNER JOIN usuario u
                 ON u.id = resumen.idUsuario
             WHERE u.estado = 1
+              AND LOWER(TRIM(COALESCE(u.rol, ''))) <> 'admin'
             GROUP BY u.id, u.usuario, u.nombre
             ORDER BY puntosTotales DESC, retosResueltos DESC, u.usuario ASC
         ";
