@@ -1,4 +1,4 @@
-﻿:root {
+:root {
     --bg: #f4f7ff;
     --card: #ffffff;
     --text: #1e2a3a;
@@ -53,6 +53,13 @@ button {
     color: #fff;
     cursor: pointer;
     border: none;
+}
+
+/* Estado visual de controles bloqueados cuando el reto ya fue acertado. */
+button:disabled,
+input:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
 }
 
 .pokemon-suggestions {
@@ -141,3 +148,6 @@ button {
     color: var(--muted);
     overflow: auto;
 }
+
+
+

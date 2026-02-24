@@ -49,4 +49,27 @@ class Partida extends Model
         $row = $stmt->fetch();
         return (int)($row['total'] ?? 0);
     }
+
+    // Si existe al menos un "acierto" para usuario - reto
+    // el jugador no puede seguir enviando intentos ese mismo día
+    public function hasCorrectAttempt(int $usuarioId, int $retoId): bool
+    {
+        $sql = "
+            SELECT 1
+            FROM partida
+            WHERE idUsuario = :usuario
+              AND idReto = :reto
+              AND resultado = 'acierto'
+            LIMIT 1
+        ";
+
+        $stmt = $this->db->pdo()->prepare($sql);
+        $stmt->execute([
+            ':usuario' => $usuarioId,
+            ':reto' => $retoId,
+        ]);
+
+        return (bool)$stmt->fetchColumn();
+    }
 }
+

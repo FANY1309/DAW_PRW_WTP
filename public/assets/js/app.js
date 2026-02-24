@@ -7,9 +7,12 @@ const debugNode = document.getElementById('debug');
 const form = document.getElementById('guess-form');
 const pokemonSearch = document.getElementById('pokemon-search');
 const suggestionsNode = document.getElementById('pokemon-suggestions');
+const submitButton = form ? form.querySelector('button[type="submit"]') : null;
 
 // Cache local con los nombres que llegan del backend (evita pedirlos en cada tecla)
 let allPokemons = [];
+// Estado local del formulario: true => usuario ya acertó el reto diario y no se permiten más envíos
+let challengeLocked = false;
 
 // Esta función corre cuando carga la página.
 async function iniciar() {
@@ -37,6 +40,15 @@ async function iniciar() {
 
     // Si todo salió bien, mostramos la fecha del reto.
     dateNode.textContent = 'Reto activo: ' + response.data.fecha;
+    // Backend informa si el reto de hoy ya fue acertado por este usuario.
+    challengeLocked = Boolean(response.data.alreadySolved);
+
+    // Si ya está resuelto al cargar la página, bloqueamos input y botón inmediatamente.
+    if (challengeLocked) {
+        bloquearEnvio(response.data.alreadySolvedMessage || 'Ya acertaste el reto de hoy. Vuelve maÃ±ana para un nuevo reto.');
+    } else {
+        desbloquearEnvio();
+    }
 
     // Mostramos la respuesta completa en modo debug.
     debugNode.textContent = JSON.stringify(response.data, null, 2);
@@ -47,6 +59,12 @@ async function iniciar() {
 form.addEventListener('submit', async function (event) {
     // Evita que la página se recargue.
     event.preventDefault();
+
+    // Si ya está resuelto al cargar la página, bloqueamos input y botón inmediatamente.
+    if (challengeLocked) {
+        bloquearEnvio('Ya acertaste el reto de hoy. Vuelve maÃ±ana para un nuevo reto.');
+        return;
+    }
 
     // Tomamos el texto escrito y quitamos espacios al inicio/fin.
     const pokemonName = pokemonSearch.value.trim();
@@ -72,6 +90,12 @@ form.addEventListener('submit', async function (event) {
         resultNode.classList.add('error');
         resultNode.classList.remove('success');
         ocultarPistas();
+
+        // Si backend marca bloqueo (race condition o pestaña antigua), cerramos formulario también aquí.
+        if (response.data && response.data.alreadySolved) {
+            challengeLocked = true;
+            bloquearEnvio(response.data.message || 'Ya acertaste el reto de hoy. Vuelve maÃ±ana para un nuevo reto.');
+        }
         return;
     }
 
@@ -92,6 +116,33 @@ form.addEventListener('submit', async function (event) {
         mostrarPistas(response.data.pista);
     }
 });
+
+// Desactiva interacción y muestra el motivo del bloqueo en el panel de resultado.
+function bloquearEnvio(message) {
+    if (pokemonSearch) {
+        pokemonSearch.disabled = true;
+    }
+    if (submitButton) {
+        submitButton.disabled = true;
+    }
+
+    ocultarSugerencias();
+    ocultarPistas();
+
+    resultNode.textContent = message;
+    resultNode.classList.add('success');
+    resultNode.classList.remove('error');
+}
+
+// Reactiva interacción cuando el reto todavía no está resuelto.
+function desbloquearEnvio() {
+    if (pokemonSearch) {
+        pokemonSearch.disabled = false;
+    }
+    if (submitButton) {
+        submitButton.disabled = false;
+    }
+}
 
 function vincularBusquedaPokemon() {
     if (!pokemonSearch || !suggestionsNode) {
@@ -323,3 +374,6 @@ function ocultarPistas() {
 }
 
 iniciar();
+
+
+

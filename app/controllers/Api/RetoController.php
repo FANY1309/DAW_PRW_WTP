@@ -14,6 +14,8 @@ class RetoController extends Controller
         // llamamos al servicio que nos permite obtener con un select el reto diario
         $service = new GameService();
         $reto = $service->getTodayChallenge();
+        // Incluimos estado de resolución para que el index se cargue bloqueado si corresponde.
+        $alreadySolved = $service->hasSolvedTodayChallenge();
 
         // respuesta del json en caso de que la consulta no encuentre un reto diario
         if (!$reto) {
@@ -29,6 +31,10 @@ class RetoController extends Controller
             'id' => (int)$reto['id'],
             'fecha' => $reto['fecha'],
             'activo' => (int)$reto['activo'],
+            // Estado booleano de bloqueo del reto de hoy.
+            'alreadySolved' => $alreadySolved,
+            // Mensaje listo para pintar en UI cuando ya se resolvió el reto diario.
+            'alreadySolvedMessage' => $alreadySolved ? 'Ya acertaste el reto de hoy. Vuelve maÃ±ana para un nuevo reto.' : null,
             // No exponemos el nombre para no romper el juego.
             'pokemon' => [
                 'id' => (int)$reto['pokemon_id'],
@@ -54,3 +60,4 @@ class RetoController extends Controller
         ]);
     }
 }
+

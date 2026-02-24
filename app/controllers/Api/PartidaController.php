@@ -49,8 +49,15 @@ class PartidaController extends Controller
         $service = new GameService();
         $result = $service->attempt($guess);
 
+        // Si ya estaba resuelto, devolvemos 409 para diferenciarlo de "sin reto activo".
+        if (!$result['ok'] && !empty($result['alreadySolved'])) {
+            Response::json($result, 409);
+            return;
+        }
+
         // Si el servicio marca ok=false (ej. sin reto), devolvemos 404
         $status = $result['ok'] ? 200 : 404;
         Response::json($result, $status);
     }
 }
+

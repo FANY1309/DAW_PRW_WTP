@@ -8,6 +8,7 @@ use App\Models\Pokemon;
 
 class GameService
 {
+    private int $usuarioId = 1; // TODO: reemplazar al implementar auth
     private RetoDiario $retoModel;
     private Partida $partidaModel;
     private Pokemon $pokemonModel;
@@ -31,6 +32,17 @@ class GameService
         return $this->pokemonModel->ListaTodos();
     }
 
+    // Consulta rápida para el frontend: permite bloquear el formulario al entrar al index.
+    public function hasSolvedTodayChallenge(): bool
+    {
+        $reto = $this->getTodayChallenge();
+        if (!$reto) {
+            return false;
+        }
+
+        return $this->partidaModel->hasCorrectAttempt($this->usuarioId, (int)$reto['id']);
+    }
+
     // esta función ejecuta el intento al darle al botón "Probar"
     public function attempt(string $guess): array
     {
@@ -45,18 +57,27 @@ class GameService
             ];
         }
 
+        // Usamos el id del reto activo para comprobar histórico de partidas del usuario.
+        $retoId = (int)$reto['id'];
+
+        // si ya acerto este reto, bloqueamos nuevos envíos
+        if ($this->partidaModel->hasCorrectAttempt($this->usuarioId, $retoId)) {
+            return [
+                'ok' => false,
+                'alreadySolved' => true, // Flag consumido por frontend/controlador para bloqueo y mensaje.
+                'message' => 'Ya acertaste el reto de hoy. Vuelve mañana para un nuevo reto.',
+            ];
+        }
+
         // transformamos los string a comparar en minúsculas para saber si el intento es acertado o no
         $target = strtolower(trim($reto['nombre']));
         $current = strtolower(trim($guess));
         $isCorrect = $target === $current;
 
-        // TODO: implementar auth, usamos un id de usuario ficticio
-        $usuarioId = 1;
-        $retoId = (int)$reto['id'];
-        // Guardamos el intento SIEMPRE, sea acierto o fallo.
-        $partidaId = $this->partidaModel->saveAttempt($usuarioId, $retoId, $isCorrect ? 'acierto' : 'fallo');
-        // Solo contamos fallos cuando realmente falló.
-        $intentosFallidos = $isCorrect ? 0 : $this->partidaModel->countFailedAttempts($usuarioId, $retoId);
+        // Guardamos el intento SIEMPRE, sea acierto o fallo
+        $partidaId = $this->partidaModel->saveAttempt($this->usuarioId, $retoId, $isCorrect ? 'acierto' : 'fallo');
+        // Solo contamos fallos cuando realmente falló
+        $intentosFallidos = $isCorrect ? 0 : $this->partidaModel->countFailedAttempts($this->usuarioId, $retoId);
 
         return [
             'ok' => true,
@@ -114,3 +135,6 @@ class GameService
         ];
     }
 }
+
+
+
