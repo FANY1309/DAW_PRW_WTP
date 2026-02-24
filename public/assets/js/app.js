@@ -6,7 +6,8 @@ import {
     getCurrentUser,
     registerUser,
     loginUser,
-    logoutUser
+    logoutUser,
+    syncPokemonGeneration
 } from './modules/game.js';
 
 const dateNode = document.getElementById('challenge-date');
@@ -40,6 +41,10 @@ const closeRankingButton = document.getElementById('close-ranking-button');
 const rankingBody = document.getElementById('ranking-body');
 const rankingMeNode = document.getElementById('ranking-me');
 const authStatusNode = document.getElementById('auth-status');
+const adminSyncPanel = document.getElementById('admin-sync-panel');
+const adminSyncForm = document.getElementById('admin-sync-form');
+const adminGenerationInput = document.getElementById('admin-generation-input');
+const adminSyncStatusNode = document.getElementById('admin-sync-status');
 
 let allPokemons = [];
 let userSession = null;
@@ -64,6 +69,7 @@ async function iniciar() {
     vincularBusquedaPokemon();
     vincularEventosAuth();
     vincularEventosRanking();
+    vincularEventosAdmin();
     await refrescarSesionJuego();
 }
 
@@ -276,6 +282,54 @@ function vincularEventosRanking() {
     }
 }
 
+// Vincula eventos para el panel de administración de sincronización de pokemons, solo para admins, y para cargar los datos al sincronizar
+function vincularEventosAdmin() {
+    if (!adminSyncForm) {
+        return;
+    }
+
+    // Al enviar el formulario, se valida la generación, se bloquea el panel para evitar múltiples envíos, 
+    // se llama al backend para sincronizar, y luego se muestra el resultado y se recargan los datos del juego
+    adminSyncForm.addEventListener('submit', async function (event) {
+        event.preventDefault();
+
+        const generation = Number(adminGenerationInput ? adminGenerationInput.value : NaN);
+        if (!Number.isInteger(generation) || generation < 1 || generation > 9) {
+            setAdminSyncStatus('Debes indicar una generacion valida entre 1 y 9.', true);
+            return;
+        }
+
+        setAdminSyncStatus('Sincronizando generacion ' + generation + '...', false);
+        bloquearAdminSync(true);
+
+        const response = await syncPokemonGeneration(generation);
+        setDebug(response.data);
+
+        if (!response.ok || !response.data.ok) {
+            const message = response.data && response.data.message
+                ? response.data.message
+                : 'No se pudo sincronizar la generacion.';
+            setAdminSyncStatus(message, true);
+            bloquearAdminSync(false);
+            return;
+        }
+
+        const data = response.data.data || {};
+        const errores = Array.isArray(data.errores) ? data.errores.length : 0;
+        const resumen = [
+            'Generacion ' + generation + ' sincronizada.',
+            'Procesados: ' + (Number(data.totalProcesados) || 0),
+            'Creados: ' + (Number(data.creados) || 0),
+            'Actualizados: ' + (Number(data.actualizados) || 0),
+            'Errores: ' + errores,
+        ].join(' ');
+
+        setAdminSyncStatus(resumen, false);
+        bloquearAdminSync(false);
+        await cargarDatosJuego();
+    });
+}
+
 form.addEventListener('submit', async function (event) {
     // Evita que la página se recargue.
     event.preventDefault();
@@ -356,6 +410,9 @@ function mostrarEstadoInvitado() {
     if (showRankingButton) {
         showRankingButton.hidden = true;
     }
+    if (adminSyncPanel) {
+        adminSyncPanel.hidden = true;
+    }
     if (loginIdentifier) {
         loginIdentifier.disabled = false;
     }
@@ -381,9 +438,11 @@ function mostrarEstadoInvitado() {
     resultNode.classList.remove('error');
     resultNode.classList.remove('success');
     clearDebug();
+    setAdminSyncStatus('', false);
     ocultarPistas();
     ocultarPuntos();
     desbloquearEnvio();
+    bloquearAdminSync(false);
     setAuthStatus('Modo invitado: puedes jugar, pero no se guardan partidas.', false);
 }
 
@@ -407,6 +466,10 @@ function mostrarEstadoUsuarioAuth() {
     if (showRankingButton) {
         showRankingButton.hidden = false;
     }
+    const isAdmin = Boolean(userSession && String(userSession.rol || '').toLowerCase() === 'admin');
+    if (adminSyncPanel) {
+        adminSyncPanel.hidden = !isAdmin;
+    }
     if (registerUsuario) {
         registerUsuario.disabled = true;
     }
@@ -421,6 +484,10 @@ function mostrarEstadoUsuarioAuth() {
     }
 
     setAuthStatus('Sesión activa: ' + (userSession.nombre || userSession.usuario) + '. Tus partidas se guardan.', false);
+    if (!isAdmin) {
+        setAdminSyncStatus('', false);
+    }
+    bloquearAdminSync(false);
 }
 
 // Muestra un mensaje de estado de autenticación
@@ -431,6 +498,34 @@ function setAuthStatus(message, isError) {
 
     authStatusNode.textContent = message;
     authStatusNode.classList.toggle('error', Boolean(isError));
+}
+
+// Muestra un mensaje de estado para la sincronización de pokemons en el panel de administración, solo para admins
+function setAdminSyncStatus(message, isError) {
+    if (!adminSyncStatusNode) {
+        return;
+    }
+
+    adminSyncStatusNode.textContent = message;
+    adminSyncStatusNode.classList.toggle('error', Boolean(isError));
+}
+
+// Bloquea o desbloquea la interacción con el panel de administración de sincronización de pokemons, 
+// para evitar múltiples envíos simultáneos o acciones no deseadas mientras se procesa una sincronización
+// Solo afecta a admins ya que el panel está oculto para invitados y usuarios normales
+function bloquearAdminSync(locked) {
+    if (adminGenerationInput) {
+        adminGenerationInput.disabled = locked;
+    }
+
+    if (!adminSyncForm) {
+        return;
+    }
+
+    const submit = adminSyncForm.querySelector('button[type="submit"]');
+    if (submit) {
+        submit.disabled = locked;
+    }
 }
 
 function abrirVentanaLogin() {

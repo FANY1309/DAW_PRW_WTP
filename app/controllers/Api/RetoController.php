@@ -24,7 +24,7 @@ class RetoController extends Controller
             Response::json([
                 'ok' => false,
                 'message' => 'No hay reto cargado.',
-            ], 404);
+            ], 200);
             return;
         }
 

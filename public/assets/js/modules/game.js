@@ -53,3 +53,11 @@ export async function logoutUser() {
         method: 'POST',
     });
 }
+
+// Sincroniza pokemons de una generacion via endpoint admin
+export async function syncPokemonGeneration(generacion) {
+    return apiFetch('api/admin/pokemon/sync-generation', {
+        method: 'POST',
+        body: JSON.stringify({ generacion }),
+    });
+}

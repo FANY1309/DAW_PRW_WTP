@@ -125,6 +125,38 @@ h1 {
     color: var(--danger);
 }
 
+.admin-sync-panel {
+    margin-top: 12px;
+    padding: 10px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: #f7fbff;
+}
+
+.admin-sync-panel h3 {
+    margin: 0 0 8px;
+    font-size: 16px;
+}
+
+.admin-sync-form {
+    display: grid;
+    gap: 8px;
+}
+
+.admin-sync-form button {
+    width: auto;
+}
+
+.admin-sync-status {
+    margin: 8px 0 0;
+    font-weight: 600;
+    color: var(--primary);
+}
+
+.admin-sync-status.error {
+    color: var(--danger);
+}
+
 #guess-form {
     display: grid;
     gap: 10px;

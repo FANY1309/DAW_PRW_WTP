@@ -51,6 +51,16 @@
         <button id="logout-button" type="button" class="logout-button" hidden>Cerrar sesión</button>
         <button id="show-ranking-button" type="button" class="show-ranking-button" hidden>Ver ranking global</button>
         <p id="auth-status" class="auth-status"></p>
+
+        <section id="admin-sync-panel" class="admin-sync-panel" hidden>
+            <h3>Administración Pokemon</h3>
+            <form id="admin-sync-form" class="admin-sync-form" autocomplete="off">
+                <label for="admin-generation-input">Generación (1-9)</label>
+                <input id="admin-generation-input" type="number" min="1" max="9" step="1" value="1">
+                <button id="admin-sync-button" type="submit">Actualizar lista desde PokeAPI</button>
+            </form>
+            <p id="admin-sync-status" class="admin-sync-status"></p>
+        </section>
     </section>
 
     <div id="ranking-modal" class="ranking-modal" hidden>
