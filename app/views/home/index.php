@@ -2,16 +2,24 @@
     <h1>WhosThatPokemon - Pokedle MVP</h1>
 
     <section class="auth-panel">
-        <h2>Iniciar sesión</h2>
-        <form id="login-form" class="login-form" autocomplete="off">
-            <label for="login-identifier">Usuario o email</label>
-            <input id="login-identifier" type="text" placeholder="usuario o correo">
+        <button id="show-login-button" type="button" class="show-login-button">Iniciar sesión</button>
+        <div id="login-modal" class="login-modal" hidden>
+            <div class="login-modal-card" role="dialog" aria-modal="true" aria-labelledby="login-title">
+                <div class="login-modal-header">
+                    <h2 id="login-title">Iniciar sesión</h2>
+                    <button id="close-login-button" type="button" class="close-login-button" aria-label="Cerrar ventana de inicio de sesión">x</button>
+                </div>
+                <form id="login-form" class="login-form" autocomplete="off">
+                    <label for="login-identifier">Usuario o email</label>
+                    <input id="login-identifier" type="text" placeholder="usuario o correo">
 
-            <label for="login-password">Contraseña</label>
-            <input id="login-password" type="password" placeholder="contraseña">
+                    <label for="login-password">Contraseña</label>
+                    <input id="login-password" type="password" placeholder="contraseña">
 
-            <button type="submit">Entrar</button>
-        </form>
+                    <button type="submit">Entrar</button>
+                </form>
+            </div>
+        </div>
 
         <button id="logout-button" type="button" class="logout-button" hidden>Cerrar sesión</button>
         <p id="auth-status" class="auth-status"></p>

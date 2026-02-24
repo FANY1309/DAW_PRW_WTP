@@ -16,6 +16,9 @@ const pokemonSearch = document.getElementById('pokemon-search');
 const suggestionsNode = document.getElementById('pokemon-suggestions');
 const submitButton = form ? form.querySelector('button[type="submit"]') : null;
 
+const showLoginButton = document.getElementById('show-login-button');
+const closeLoginButton = document.getElementById('close-login-button');
+const loginModal = document.getElementById('login-modal');
 const loginForm = document.getElementById('login-form');
 const loginIdentifier = document.getElementById('login-identifier');
 const loginPassword = document.getElementById('login-password');
@@ -87,6 +90,26 @@ async function cargarDatosJuego() {
 
 // Vincula eventos de login/logout y sincroniza estado de sesión + juego tras cada accion
 function vincularEventosAuth() {
+    if (showLoginButton) {
+        showLoginButton.addEventListener('click', function () {
+            abrirVentanaLogin();
+        });
+    }
+
+    if (closeLoginButton) {
+        closeLoginButton.addEventListener('click', function () {
+            cerrarVentanaLogin();
+        });
+    }
+
+    if (loginModal) {
+        loginModal.addEventListener('click', function (event) {
+            if (event.target === loginModal) {
+                cerrarVentanaLogin();
+            }
+        });
+    }
+
     if (loginForm) {
         loginForm.addEventListener('submit', async function (event) {
             event.preventDefault();
@@ -112,6 +135,7 @@ function vincularEventosAuth() {
                 loginPassword.value = '';
             }
 
+            cerrarVentanaLogin();
             await refrescarSesionJuego();
         });
     }
@@ -175,8 +199,11 @@ form.addEventListener('submit', async function (event) {
 
 // renderiza la vista para usuario no autenticado (invitado)
 function mostrarEstadoInvitado() {
-    if (loginForm) {
-        loginForm.hidden = false;
+    if (showLoginButton) {
+        showLoginButton.hidden = false;
+    }
+    if (loginModal) {
+        loginModal.hidden = true;
     }
     if (logoutButton) {
         logoutButton.hidden = true;
@@ -200,8 +227,11 @@ function mostrarEstadoInvitado() {
 
 // renderiza la vista para usuario autenticado
 function mostrarEstadoUsuarioAuth() {
-    if (loginForm) {
-        loginForm.hidden = true;
+    if (showLoginButton) {
+        showLoginButton.hidden = true;
+    }
+    if (loginModal) {
+        loginModal.hidden = true;
     }
     if (logoutButton) {
         logoutButton.hidden = false;
@@ -218,6 +248,26 @@ function setAuthStatus(message, isError) {
 
     authStatusNode.textContent = message;
     authStatusNode.classList.toggle('error', Boolean(isError));
+}
+
+function abrirVentanaLogin() {
+    if (!loginModal) {
+        return;
+    }
+
+    loginModal.hidden = false;
+
+    if (loginIdentifier) {
+        loginIdentifier.focus();
+    }
+}
+
+function cerrarVentanaLogin() {
+    if (!loginModal) {
+        return;
+    }
+
+    loginModal.hidden = true;
 }
 
 // Desactiva interacción cuando el reto no está disponible o ya fue resuelto
